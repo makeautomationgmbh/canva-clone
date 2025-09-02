@@ -16,6 +16,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useState } from 'react';
+import { OnOfficeConnection } from '@/components/sections/OnOfficeConnection';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -37,69 +38,7 @@ export default function Dashboard() {
         </div>
 
         {/* onOffice Connection Status */}
-        <Card className="mb-8 border-border/50">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Building2 className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle>onOffice Integration</CardTitle>
-                  <CardDescription>
-                    Verbinden Sie Ihr onOffice CRM für automatische Datenimporte
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge variant={connectedToOnOffice ? "default" : "secondary"}>
-                {connectedToOnOffice ? "Verbunden" : "Nicht verbunden"}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!connectedToOnOffice ? (
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div>
-                  <p className="font-medium">onOffice API konfigurieren</p>
-                  <p className="text-sm text-muted-foreground">
-                    Verbinden Sie Ihr onOffice CRM um Immobiliendaten zu importieren
-                  </p>
-                </div>
-                <Button variant="primary">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Jetzt verbinden
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Building2 className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Immobilien</span>
-                  </div>
-                  <p className="text-2xl font-bold">24</p>
-                  <p className="text-sm text-muted-foreground">Aktive Listings</p>
-                </div>
-                <div className="p-4 bg-green-500/5 rounded-lg border border-green-500/20">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span className="font-medium">Sync Status</span>
-                  </div>
-                  <p className="text-2xl font-bold text-green-600">100%</p>
-                  <p className="text-sm text-muted-foreground">Letzte Sync: vor 2 Min</p>
-                </div>
-                <div className="p-4 bg-blue-500/5 rounded-lg border border-blue-500/20">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <FileImage className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">Generierte Posts</span>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-600">156</p>
-                  <p className="text-sm text-muted-foreground">Diesen Monat</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <OnOfficeConnection onConnectionChange={setConnectedToOnOffice} />
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="templates" className="space-y-6">
