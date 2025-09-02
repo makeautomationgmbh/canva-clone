@@ -488,12 +488,36 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     setIsSaving(true);
     
     try {
-      // Add custom layer ID to each fabric object before saving
-      fabricCanvas.getObjects().forEach((obj) => {
-        const fabricObjectId = (obj as ExtendedFabricObject).id;
-        const layer = layers.find(l => l.fabricObjectId === fabricObjectId);
+      console.log('Saving template, current layers:', layers.length);
+      console.log('Canvas objects before save:', fabricCanvas.getObjects().length);
+      
+      // Ensure all fabric objects have IDs and are linked to layers
+      fabricCanvas.getObjects().forEach((obj, index) => {
+        const extObj = obj as ExtendedFabricObject;
+        
+        // Find corresponding layer
+        let layer = layers.find(l => l.fabricObjectId === extObj.id);
+        
+        // If no layer found, find by index
+        if (!layer && index < layers.length) {
+          layer = layers[index];
+        }
+        
         if (layer) {
-          (obj as ExtendedFabricObject).layerId = layer.id;
+          // Ensure fabric object has the layer's fabricObjectId
+          if (!extObj.id) {
+            extObj.id = layer.fabricObjectId || generateId();
+          }
+          // Add layer reference for easier loading
+          extObj.layerId = layer.id;
+          
+          console.log(`Object ${index}: id=${extObj.id}, layerId=${extObj.layerId}, type=${obj.type}`);
+        } else {
+          // Create ID for orphaned objects
+          if (!extObj.id) {
+            extObj.id = generateId();
+          }
+          console.warn(`Object ${index} has no corresponding layer`);
         }
       });
 
@@ -512,6 +536,12 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
           visible: layer.visible !== false
         })) as any
       };
+
+      console.log('Template data to save:', {
+        objectCount: templateData.canvas_data.objects.length,
+        layerCount: templateData.layers.length,
+        templateId: currentTemplateId
+      });
 
       let error;
       let data;
@@ -553,6 +583,11 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
         toast.success(currentTemplateId ? 'Vorlage aktualisiert!' : 'Vorlage erstellt!');
         onSaveTemplate?.(templateData);
         loadSavedTemplates(); // Refresh the templates list
+        
+        // Force a re-render to ensure everything stays visible
+        setTimeout(() => {
+          fabricCanvas.renderAll();
+        }, 100);
       }
     } catch (error) {
       toast.error('Unerwarteter Fehler beim Speichern');
@@ -567,6 +602,8 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
 
     try {
       console.log('Loading template:', template);
+      console.log('Template canvas_data objects:', template.canvas_data.objects);
+      console.log('Template layers:', template.layers);
       
       // Clear current canvas and layers
       fabricCanvas.clear();
@@ -577,63 +614,113 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
       console.log('Set current template ID to:', template.id);
       
       // Load the saved canvas data
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve, reject) => {
         fabricCanvas.loadFromJSON(template.canvas_data, () => {
-          console.log('Canvas loaded, objects:', fabricCanvas.getObjects().length);
-          
-          // Update canvas size
-          setSelectedPreset(template.canvas_size);
-          fabricCanvas.setDimensions({
-            width: template.canvas_size.width,
-            height: template.canvas_size.height
-          });
-          
-          // Update template name
-          setTemplateName(template.name);
-          
-          // Recreate layers array by matching fabric objects to saved layers
-          const fabricObjects = fabricCanvas.getObjects();
-          const newLayers: TemplateLayer[] = [];
-          
-          // Match layers using fabricObjectId or layerId
-          template.layers.forEach((layerData: any) => {
-            let fabricObject = null;
+          try {
+            console.log('Canvas loaded successfully');
+            const fabricObjects = fabricCanvas.getObjects();
+            console.log('Fabric objects after loading:', fabricObjects.length);
             
-            // First try to match by layerId (for compatibility)
-            if (layerData.id) {
-              fabricObject = fabricObjects.find(obj => (obj as ExtendedFabricObject).layerId === layerData.id);
-            }
-            
-            // If not found, try to match by fabricObjectId
-            if (!fabricObject && layerData.fabricObjectId) {
-              fabricObject = fabricObjects.find(obj => (obj as ExtendedFabricObject).id === layerData.fabricObjectId);
-            }
-            
-            // If still not found, fall back to index-based matching
-            if (!fabricObject) {
-              const index = template.layers.indexOf(layerData);
-              fabricObject = fabricObjects[index];
-            }
-            
-            if (fabricObject) {
-              // Ensure fabric object has an ID
-              if (!(fabricObject as ExtendedFabricObject).id) {
-                (fabricObject as ExtendedFabricObject).id = layerData.fabricObjectId || generateId();
-              }
-              
-              newLayers.push({
-                ...layerData,
-                fabricObjectId: (fabricObject as ExtendedFabricObject).id,
-                visible: layerData.visible !== false
+            // Update canvas size
+            if (template.canvas_size) {
+              setSelectedPreset(template.canvas_size);
+              fabricCanvas.setDimensions({
+                width: template.canvas_size.width,
+                height: template.canvas_size.height
               });
             }
-          });
-          
-          console.log('Created layers:', newLayers.length);
-          setLayers(newLayers);
-          fabricCanvas.renderAll();
-          
-          resolve();
+            
+            // Update template name
+            setTemplateName(template.name);
+            
+            // Recreate layers array
+            const newLayers: TemplateLayer[] = [];
+            
+            if (template.layers && template.layers.length > 0) {
+              // Try to match layers to fabric objects
+              template.layers.forEach((layerData: any, index: number) => {
+                console.log('Processing layer:', layerData);
+                
+                let fabricObject = null;
+                
+                // Try different matching strategies
+                if (layerData.fabricObjectId) {
+                  // Try to find by custom ID in the loaded objects
+                  fabricObject = fabricObjects.find(obj => (obj as any).id === layerData.fabricObjectId);
+                  console.log('Found by fabricObjectId:', !!fabricObject);
+                }
+                
+                if (!fabricObject && layerData.id) {
+                  // Try to find by layerId
+                  fabricObject = fabricObjects.find(obj => (obj as any).layerId === layerData.id);
+                  console.log('Found by layerId:', !!fabricObject);
+                }
+                
+                // Fall back to index-based matching
+                if (!fabricObject && index < fabricObjects.length) {
+                  fabricObject = fabricObjects[index];
+                  console.log('Using index-based matching for layer', index);
+                }
+                
+                if (fabricObject) {
+                  // Ensure the fabric object has a unique ID
+                  if (!(fabricObject as ExtendedFabricObject).id) {
+                    (fabricObject as ExtendedFabricObject).id = layerData.fabricObjectId || generateId();
+                  }
+                  
+                  const newLayer: TemplateLayer = {
+                    id: layerData.id,
+                    type: layerData.type,
+                    name: layerData.name,
+                    fabricObjectId: (fabricObject as ExtendedFabricObject).id,
+                    dataBinding: layerData.dataBinding,
+                    estateImageType: layerData.estateImageType,
+                    visible: layerData.visible !== false
+                  };
+                  
+                  newLayers.push(newLayer);
+                  console.log('Created layer:', newLayer.name);
+                } else {
+                  console.warn('Could not match layer to fabric object:', layerData);
+                }
+              });
+            } else {
+              // If no layers saved, create layers for each fabric object
+              console.log('No saved layers, creating layers for fabric objects');
+              fabricObjects.forEach((obj, index) => {
+                const objId = generateId();
+                (obj as ExtendedFabricObject).id = objId;
+                
+                let type: 'text' | 'image' | 'shape' = 'shape';
+                if (obj.type === 'textbox' || obj.type === 'text') type = 'text';
+                else if (obj.type === 'image') type = 'image';
+                
+                const newLayer: TemplateLayer = {
+                  id: `auto_${Date.now()}_${index}`,
+                  type: type,
+                  name: `${type === 'text' ? 'Text' : type === 'image' ? 'Bild' : 'Form'} ${index + 1}`,
+                  fabricObjectId: objId,
+                  visible: true
+                };
+                
+                newLayers.push(newLayer);
+              });
+            }
+            
+            console.log('Final layers count:', newLayers.length);
+            setLayers(newLayers);
+            
+            // Force a render
+            fabricCanvas.renderAll();
+            
+            resolve();
+          } catch (error) {
+            console.error('Error in loadFromJSON callback:', error);
+            reject(error);
+          }
+        }).catch((error: any) => {
+          console.error('Error loading canvas from JSON:', error);
+          reject(error);
         });
       });
       
