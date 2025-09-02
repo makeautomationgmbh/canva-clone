@@ -17,9 +17,11 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { OnOfficeConnection } from '@/components/sections/OnOfficeConnection';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [connectedToOnOffice, setConnectedToOnOffice] = useState(false);
 
   return (
@@ -58,7 +60,7 @@ export default function Dashboard() {
                   Erstellen und verwalten Sie Ihre Social Media Vorlagen
                 </p>
               </div>
-              <Button variant="primary">
+              <Button variant="primary" onClick={() => navigate('/template-editor')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Neue Vorlage
               </Button>
@@ -108,7 +110,10 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-md transition-shadow cursor-pointer border-dashed border-2 border-muted-foreground/20">
+              <Card 
+                className="hover:shadow-md transition-shadow cursor-pointer border-dashed border-2 border-muted-foreground/20"
+                onClick={() => navigate('/template-editor')}
+              >
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Plus className="h-12 w-12 text-muted-foreground/50 mb-4" />
                   <p className="text-muted-foreground font-medium">Neue Vorlage erstellen</p>
@@ -169,7 +174,7 @@ export default function Dashboard() {
               <p className="text-muted-foreground mb-6">
                 Erstellen Sie Ihre erste Vorlage um automatisch Posts zu generieren
               </p>
-              <Button variant="primary">Erste Vorlage erstellen</Button>
+              <Button variant="primary" onClick={() => navigate('/template-editor')}>Erste Vorlage erstellen</Button>
             </Card>
           </TabsContent>
 

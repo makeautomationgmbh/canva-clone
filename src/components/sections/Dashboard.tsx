@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Eye, Download, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const templates = [
   {
@@ -31,6 +32,8 @@ const templates = [
 ];
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-16 bg-muted/30">
       <div className="container">
@@ -40,7 +43,7 @@ export const Dashboard = () => {
               <h2 className="text-2xl font-bold">Vorlagen Dashboard</h2>
               <p className="text-muted-foreground">Verwalten Sie Ihre Social Media Vorlagen und generieren Sie Inhalte</p>
             </div>
-            <Button variant="primary" onClick={() => window.location.href = '/template-editor'}>
+            <Button variant="primary" onClick={() => navigate('/template-editor')}>
               <Plus className="h-4 w-4 mr-2" />
               Neue Vorlage
             </Button>
