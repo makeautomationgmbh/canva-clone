@@ -162,16 +162,17 @@ class OnOfficeAPI {
   }
 
   // Get estate images
+  // Get estate files according to onOffice documentation
   async getEstateFiles(estateId: number) {
     return this.makeRequest({
       token: this.token,
       secret: this.secret,
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
-      resourceType: 'estate',
-      resourceId: estateId.toString(),
+      resourceType: 'file',
       parameters: {
-        data: ['dateien'],
-        formatoutput: true
+        estateid: estateId,
+        showispublishedonhomepage: true,
+        showpublicationstatus: true
       }
     });
   }
