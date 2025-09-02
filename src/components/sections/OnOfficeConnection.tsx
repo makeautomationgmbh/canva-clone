@@ -81,37 +81,28 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
   };
 
   const loadAllEstateFiles = async (estates: OnOfficeEstate[]) => {
-    console.log('Loading files for estates:', estates.map(e => e.elements.Id || e.id));
+    console.log('🔄 Loading images for estates:', estates.map(e => e.elements.Id || e.id));
     
     const filePromises = estates.map(async (estate) => {
       const estateId = estate.elements.Id || estate.id;
       if (!estateId) return;
       
       try {
-        const files = await getEstateFiles(parseInt(estateId));
-        console.log(`Raw files response for estate ${estateId}:`, files);
-        console.log(`Files type:`, typeof files, Array.isArray(files));
+        console.log(`📸 Loading images for estate ${estateId}`);
         
-        // Handle different response structures
-        let processedFiles: any[] = [];
-        if (Array.isArray(files)) {
-          processedFiles = files;
-        } else if (files && typeof files === 'object' && 'response' in files) {
-          // Extract from API response structure
-          const apiResponse = files as any;
-          if (apiResponse.response?.results?.[0]?.data?.records) {
-            processedFiles = apiResponse.response.results[0].data.records;
-          }
-        }
+        // Use the new getEstateImages API that handles the response properly
+        const images = await getEstateImages(parseInt(estateId));
+        console.log(`📸 Received ${images.length} images for estate ${estateId}:`, images);
         
-        console.log(`Processed files for estate ${estateId}:`, processedFiles);
-        setEstateFiles(prev => ({ ...prev, [estateId]: processedFiles }));
+        setEstateFiles(prev => ({ ...prev, [estateId]: images }));
+        
       } catch (error) {
-        console.error(`Failed to load files for estate ${estateId}:`, error);
+        console.error(`❌ Failed to load images for estate ${estateId}:`, error);
       }
     });
     
     await Promise.all(filePromises);
+    console.log('✅ Finished loading all estate images');
   };
 
   const testEstateFiles = async () => {

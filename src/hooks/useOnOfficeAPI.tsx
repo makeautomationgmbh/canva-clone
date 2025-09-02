@@ -122,8 +122,31 @@ export const useOnOfficeAPI = () => {
   };
 
   const getEstateImages = async (estateId: number): Promise<any[]> => {
+    console.log(`🖼️ Calling getEstateImages API for estate ${estateId}`);
     const result = await callAPI('getEstateImages', { estateId });
-    return result?.response?.results?.[0]?.data?.records || [];
+    console.log(`🖼️ Raw API response for estate ${estateId}:`, result);
+    
+    // Handle different response structures - the API might return data directly
+    if (Array.isArray(result)) {
+      return result;
+    }
+    
+    // Or it might be wrapped in a response structure
+    if (result && result.response && result.response.results) {
+      const actionResult = result.response.results[0];
+      if (actionResult && actionResult.data && actionResult.data.records) {
+        console.log(`🖼️ Extracted ${actionResult.data.records.length} images for estate ${estateId}`);
+        return actionResult.data.records;
+      }
+    }
+    
+    // Or it might be in a data property directly
+    if (result && result.data) {
+      return Array.isArray(result.data) ? result.data : [];
+    }
+    
+    console.log(`⚠️ No images found for estate ${estateId}, result structure:`, result);
+    return [];
   };
 
   return {
