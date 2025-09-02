@@ -111,10 +111,12 @@ class OnOfficeAPI {
       throw new Error(`onOffice API error: ${result.status.message || 'Unknown error'} (Code: ${result.status.code})`);
     }
     
-    // Check for action-level errors
+    // Check for action-level errors - be more careful about undefined values
     if (result.response && result.response.results && result.response.results[0]) {
       const actionResult = result.response.results[0];
-      if (actionResult.status && actionResult.status.code !== 200) {
+      console.log('Action result status:', actionResult.status);
+      
+      if (actionResult.status && actionResult.status.code && actionResult.status.code !== 200) {
         console.error('onOffice action error:', actionResult.status);
         throw new Error(`onOffice action error: ${actionResult.status.message || 'Unknown error'} (Code: ${actionResult.status.code})`);
       }
@@ -225,8 +227,14 @@ serve(async (req) => {
         break;
       
       case 'testConnection':
-        // Test connection by getting a small list of estates
-        result = await api.getEstates({ listlimit: 1 });
+        // Test connection with the most basic request possible - no parameters
+        result = await api.makeRequest({
+          token: token,
+          secret: secret,
+          actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
+          resourceType: 'estate',
+          parameters: {}
+        });
         break;
       
       default:
