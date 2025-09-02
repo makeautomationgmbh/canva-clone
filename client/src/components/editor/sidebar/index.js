@@ -6,6 +6,7 @@ import {
   Grid,
   Pencil,
   Settings,
+  Building2,
   Sparkle,
   Type,
   Upload,
@@ -17,6 +18,7 @@ import UploadPanel from "./panels/upload";
 import DrawingPanel from "./panels/draw";
 import SettingsPanel from "./panels/settings";
 import AiPanel from "./panels/ai";
+import EstatePanel from "./panels/estate";
 import { useEditorStore } from "@/store";
 
 function Sidebar() {
@@ -29,6 +31,12 @@ function Sidebar() {
       icon: Grid,
       label: "Elements",
       panel: () => <ElementsPanel />,
+    },
+    {
+      id: "estate",
+      icon: Building2,
+      label: "Estate",
+      panel: () => <EstatePanel />,
     },
     {
       id: "text",
