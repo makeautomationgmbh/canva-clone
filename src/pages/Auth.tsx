@@ -1,190 +1,208 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2, Mail, Lock, User, Building } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [signInData, setSignInData] = useState({ email: '', password: '' });
-  const [signUpData, setSignUpData] = useState({ 
-    email: '', 
-    password: '', 
-    displayName: '', 
-    companyName: '' 
-  });
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [loading, setLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/');
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, location]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signInData.email || !signInData.password) return;
+    setLoading(true);
 
-    setIsLoading(true);
-    const { error } = await signIn(signInData.email, signInData.password);
-    
-    if (error) {
+    try {
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast({
+            title: "Anmeldung fehlgeschlagen",
+            description: error.message === "Invalid login credentials" 
+              ? "Ungültige E-Mail oder Passwort"
+              : error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Anmeldung erfolgreich",
+            description: "Willkommen zurück!",
+          });
+        }
+      } else {
+        const { error } = await signUp(email, password, {
+          display_name: displayName,
+          company_name: companyName
+        });
+        if (error) {
+          if (error.message === "User already registered") {
+            toast({
+              title: "Registrierung fehlgeschlagen",
+              description: "Ein Benutzer mit dieser E-Mail existiert bereits",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Registrierung fehlgeschlagen",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({
+            title: "Registrierung erfolgreich",
+            description: "Bitte bestätigen Sie Ihre E-Mail-Adresse",
+          });
+        }
+      }
+    } catch (error) {
       toast({
-        title: "Anmeldung fehlgeschlagen",
-        description: error.message === "Invalid login credentials" 
-          ? "E-Mail oder Passwort ist falsch." 
-          : "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+        title: "Fehler",
+        description: "Ein unerwarteter Fehler ist aufgetreten",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Erfolgreich angemeldet",
-        description: "Willkommen zurück!",
-      });
+    } finally {
+      setLoading(false);
     }
-    setIsLoading(false);
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!signUpData.email || !signUpData.password) return;
-
-    setIsLoading(true);
-    const { error } = await signUp(
-      signUpData.email, 
-      signUpData.password,
-      signUpData.displayName,
-      signUpData.companyName
-    );
-    
-    if (error) {
-      toast({
-        title: "Registrierung fehlgeschlagen",
-        description: error.message === "User already registered" 
-          ? "Ein Benutzer mit dieser E-Mail existiert bereits." 
-          : "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Registrierung erfolgreich",
-        description: "Überprüfen Sie Ihre E-Mail für die Bestätigung.",
-      });
-    }
-    setIsLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary rounded-xl">
-              <Building2 className="h-8 w-8 text-primary-foreground" />
-            </div>
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex items-center justify-center space-x-2 mb-8">
+          <div className="p-3 bg-primary rounded-xl">
+            <Building2 className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold">immoautomation</CardTitle>
-          <CardDescription>
-            Automatisierte Social Media Inhalte für Immobilien
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Anmelden</TabsTrigger>
-              <TabsTrigger value="signup">Registrieren</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin" className="space-y-4">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">E-Mail</Label>
+          <span className="text-2xl font-bold text-foreground">immoautomation</span>
+        </div>
+
+        <Card className="backdrop-blur-sm bg-card/95 border-border/50 shadow-elegant">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold">
+              {isLogin ? 'Anmelden' : 'Registrieren'}
+            </CardTitle>
+            <CardDescription>
+              {isLogin 
+                ? 'Melden Sie sich in Ihrem Konto an' 
+                : 'Erstellen Sie Ihr kostenloses Konto'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName">Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="displayName"
+                        type="text"
+                        placeholder="Ihr vollständiger Name"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Unternehmen</Label>
+                    <div className="relative">
+                      <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="companyName"
+                        type="text"
+                        placeholder="Ihr Immobilienunternehmen"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">E-Mail</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="signin-email"
+                    id="email"
                     type="email"
-                    placeholder="ihre@email.de"
-                    value={signInData.email}
-                    onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="ihre.email@beispiel.de"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Passwort</Label>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Passwort</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="signin-password"
+                    id="password"
                     type="password"
-                    value={signInData.password}
-                    onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Passwort eingeben"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Anmelden
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">E-Mail</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="ihre@email.de"
-                    value={signUpData.email}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Passwort</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={signUpData.password}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="display-name">Name (optional)</Label>
-                  <Input
-                    id="display-name"
-                    type="text"
-                    placeholder="Ihr Name"
-                    value={signUpData.displayName}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, displayName: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Unternehmen (optional)</Label>
-                  <Input
-                    id="company-name"
-                    type="text"
-                    placeholder="Ihr Immobilienunternehmen"
-                    value={signUpData.companyName}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, companyName: e.target.value }))}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Registrieren
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={loading}
+                variant="primary"
+              >
+                {loading ? 'Wird verarbeitet...' : (isLogin ? 'Anmelden' : 'Registrieren')}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                {isLogin 
+                  ? 'Noch kein Konto? Jetzt registrieren' 
+                  : 'Bereits ein Konto? Hier anmelden'
+                }
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
