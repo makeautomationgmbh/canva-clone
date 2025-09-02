@@ -3,11 +3,11 @@ import { Card } from "@/components/ui/card";
 import { ArrowRight, CheckCircle } from "lucide-react";
 
 const benefits = [
-  "Connect your onOffice CRM in minutes",
-  "AI-powered content generation", 
-  "Unlimited template customization",
-  "Multi-platform publishing",
-  "Professional support included"
+  "Verbinden Sie Ihr onOffice CRM in wenigen Minuten",
+  "KI-gestützte Inhaltserstellung", 
+  "Unbegrenzte Vorlagen-Anpassung",
+  "Multi-Plattform Veröffentlichung",
+  "Professioneller Support inklusive"
 ];
 
 export const CTA = () => {
@@ -18,10 +18,10 @@ export const CTA = () => {
           <div className="max-w-3xl mx-auto space-y-8">
             <div className="space-y-4">
               <h2 className="text-3xl lg:text-4xl font-bold">
-                Ready to Transform Your Real Estate Marketing?
+                Bereit, Ihr Immobilienmarketing zu revolutionieren?
               </h2>
               <p className="text-xl opacity-90">
-                Join hundreds of real estate professionals who've automated their social media content creation
+                Schließen Sie sich Hunderten von Immobilienprofis an, die ihre Social Media Inhaltserstellung automatisiert haben
               </p>
             </div>
 
@@ -36,15 +36,15 @@ export const CTA = () => {
               </div>
               <div className="space-y-6">
                 <div className="text-center md:text-left">
-                  <div className="text-3xl font-bold">Start Free</div>
-                  <div className="opacity-90">14-day trial, no credit card required</div>
+                  <div className="text-3xl font-bold">Kostenlos starten</div>
+                  <div className="opacity-90">14 Tage kostenlos testen, keine Kreditkarte erforderlich</div>
                 </div>
                 <Button 
                   variant="outline" 
                   size="lg" 
                   className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                 >
-                  Start Your Free Trial
+                  Jetzt kostenlos testen
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>

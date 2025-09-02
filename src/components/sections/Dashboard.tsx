@@ -6,27 +6,27 @@ import { FileText, Plus, Eye, Download, Settings } from "lucide-react";
 const templates = [
   {
     id: 1,
-    name: "Modern Listing Card",
+    name: "Moderne Immobilien-Karte",
     category: "Instagram",
-    status: "Active",
+    status: "Aktiv",
     usage: 24,
-    lastUsed: "2 hours ago",
+    lastUsed: "vor 2 Stunden",
   },
   {
     id: 2,
-    name: "Property Showcase",
+    name: "Immobilien-Showcase",
     category: "Facebook",
-    status: "Active", 
+    status: "Aktiv", 
     usage: 18,
-    lastUsed: "1 day ago",
+    lastUsed: "vor 1 Tag",
   },
   {
     id: 3,
-    name: "Open House Announcement",
+    name: "Tag der offenen Tür",
     category: "LinkedIn",
-    status: "Draft",
+    status: "Entwurf",
     usage: 0,
-    lastUsed: "Never",
+    lastUsed: "Nie",
   },
 ];
 
@@ -37,12 +37,12 @@ export const Dashboard = () => {
         <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Template Dashboard</h2>
-              <p className="text-muted-foreground">Manage your social media templates and generate content</p>
+              <h2 className="text-2xl font-bold">Vorlagen Dashboard</h2>
+              <p className="text-muted-foreground">Verwalten Sie Ihre Social Media Vorlagen und generieren Sie Inhalte</p>
             </div>
             <Button variant="primary">
               <Plus className="h-4 w-4 mr-2" />
-              New Template
+              Neue Vorlage
             </Button>
           </div>
 
@@ -58,7 +58,7 @@ export const Dashboard = () => {
                       <div>
                         <CardTitle className="text-lg">{template.name}</CardTitle>
                         <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant={template.status === "Active" ? "default" : "secondary"}>
+                          <Badge variant={template.status === "Aktiv" ? "default" : "secondary"}>
                             {template.status}
                           </Badge>
                           <span className="text-sm text-muted-foreground">{template.category}</span>
@@ -80,8 +80,8 @@ export const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Used {template.usage} times</span>
-                    <span>Last used {template.lastUsed}</span>
+                    <span>{template.usage} mal verwendet</span>
+                    <span>Zuletzt verwendet {template.lastUsed}</span>
                   </div>
                 </CardContent>
               </Card>

@@ -14,24 +14,24 @@ export const Header = () => {
         
         <nav className="hidden md:flex items-center space-x-8">
           <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-smooth">
-            Features
+            Funktionen
           </a>
           <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-smooth">
-            Pricing
+            Preise
           </a>
           <a href="#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-smooth">
-            About
+            Über uns
           </a>
         </nav>
 
         <div className="flex items-center space-x-3">
           <Button variant="ghost" size="sm" className="hidden sm:flex">
             <LogIn className="h-4 w-4 mr-2" />
-            Sign In
+            Anmelden
           </Button>
           <Button variant="primary" size="sm">
             <UserPlus className="h-4 w-4 mr-2" />
-            Get Started
+            Jetzt starten
           </Button>
         </div>
       </div>

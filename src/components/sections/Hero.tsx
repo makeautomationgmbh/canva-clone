@@ -11,37 +11,37 @@ export const Hero = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-2 text-primary font-medium">
                 <Building2 className="h-5 w-5" />
-                <span>Real Estate Marketing Automation</span>
+                <span>Immobilien Marketing Automatisierung</span>
               </div>
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                Auto-Generate 
-                <span className="gradient-primary bg-clip-text text-transparent"> Social Content</span> 
-                for Every Listing
+                Automatische 
+                <span className="gradient-primary bg-clip-text text-transparent"> Social Media Inhalte</span> 
+                für jede Immobilie
               </h1>
               <p className="text-lg text-muted-foreground max-w-lg">
-                Connect your onOffice CRM and automatically create professional social media posts. 
-                No graphic designer needed - just beautiful, branded content at scale.
+                Verbinden Sie Ihr onOffice CRM und erstellen Sie automatisch professionelle Social Media Posts. 
+                Kein Grafikdesigner nötig - nur schöne, markengerechte Inhalte im großen Stil.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="primary" size="lg" className="shadow-medium">
-                Start Free Trial
+                Kostenlos testen
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button variant="outline" size="lg">
-                Watch Demo
+                Demo ansehen
               </Button>
             </div>
 
             <div className="flex items-center space-x-8 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
                 <Zap className="h-4 w-4 text-primary" />
-                <span>Instant Setup</span>
+                <span>Sofort einsatzbereit</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Camera className="h-4 w-4 text-primary" />
-                <span>AI-Powered</span>
+                <span>KI-gestützt</span>
               </div>
             </div>
           </div>
@@ -50,22 +50,22 @@ export const Hero = () => {
             <Card className="p-8 shadow-soft">
               <div className="space-y-6">
                 <div className="bg-primary-light rounded-lg p-4">
-                  <h3 className="font-semibold text-primary mb-2">Template Preview</h3>
+                  <h3 className="font-semibold text-primary mb-2">Vorlage Vorschau</h3>
                   <div className="bg-background rounded border-2 border-dashed border-primary/30 h-48 flex items-center justify-center">
                     <div className="text-center space-y-2 text-muted-foreground">
                       <Building2 className="h-8 w-8 mx-auto" />
-                      <p className="text-sm">Dynamic content from your CRM</p>
+                      <p className="text-sm">Dynamische Inhalte aus Ihrem CRM</p>
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Price:</span>
-                    <p className="font-semibold">$450,000</p>
+                    <span className="text-muted-foreground">Preis:</span>
+                    <p className="font-semibold">450.000€</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Location:</span>
-                    <p className="font-semibold">Downtown</p>
+                    <span className="text-muted-foreground">Lage:</span>
+                    <p className="font-semibold">Innenstadt</p>
                   </div>
                 </div>
               </div>

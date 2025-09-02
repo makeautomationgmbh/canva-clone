@@ -5,32 +5,32 @@ const features = [
   {
     icon: Database,
     title: "onOffice CRM Integration",
-    description: "Seamlessly connect your existing CRM and sync listing data in real-time for automatic content generation."
+    description: "Verbinden Sie nahtlos Ihr bestehendes CRM und synchronisieren Sie Immobiliendaten in Echtzeit für automatische Inhaltserstellung."
   },
   {
     icon: Palette,
-    title: "Visual Template Builder",
-    description: "Design beautiful templates with our intuitive editor. Map CRM fields to create dynamic, branded content."
+    title: "Visueller Vorlagen-Editor",
+    description: "Gestalten Sie schöne Vorlagen mit unserem intuitiven Editor. Verknüpfen Sie CRM-Felder für dynamische, markengerechte Inhalte."
   },
   {
     icon: Bot,
-    title: "AI-Powered Captions",
-    description: "Generate engaging property descriptions and social media captions tailored to your brand voice."
+    title: "KI-gestützte Texterstellung",
+    description: "Generieren Sie ansprechende Immobilienbeschreibungen und Social Media Texte, die zu Ihrer Marke passen."
   },
   {
     icon: Share2,
-    title: "Multi-Platform Publishing",
-    description: "Export optimized content for Facebook, Instagram, LinkedIn, and other social media platforms."
+    title: "Multi-Plattform Veröffentlichung",
+    description: "Exportieren Sie optimierte Inhalte für Facebook, Instagram, LinkedIn und andere Social Media Plattformen."
   },
   {
     icon: BarChart,
     title: "Performance Analytics",
-    description: "Track engagement and optimize your content strategy with detailed performance insights."
+    description: "Verfolgen Sie Engagement und optimieren Sie Ihre Content-Strategie mit detaillierten Performance-Einblicken."
   },
   {
     icon: Zap,
-    title: "Instant Generation",
-    description: "Transform listing data into professional social media posts in seconds, not hours."
+    title: "Sofortige Generierung",
+    description: "Verwandeln Sie Immobiliendaten in Sekunden, nicht Stunden, in professionelle Social Media Posts."
   }
 ];
 
@@ -40,12 +40,12 @@ export const Features = () => {
       <div className="container">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl lg:text-4xl font-bold">
-            Everything You Need to Scale Your 
-            <span className="gradient-primary bg-clip-text text-transparent"> Social Presence</span>
+            Alles was Sie brauchen für Ihre 
+            <span className="gradient-primary bg-clip-text text-transparent"> Social Media Präsenz</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From CRM integration to AI-powered content generation, we've built the complete solution 
-            for modern real estate marketing.
+            Von der CRM-Integration bis zur KI-gestützten Inhaltserstellung - wir haben die komplette Lösung 
+            für modernes Immobilienmarketing entwickelt.
           </p>
         </div>
 
