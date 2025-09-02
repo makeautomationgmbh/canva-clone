@@ -173,6 +173,7 @@ class OnOfficeAPI {
       resourceType: 'file',
       parameters: {
         estateid: estateId,
+        data: ['name', 'title', 'url', 'type', 'size', 'fileid'],
         showispublishedonhomepage: true,
         showpublicationstatus: true
       }
@@ -180,7 +181,7 @@ class OnOfficeAPI {
     
     console.log(`Files API result for estate ${estateId}:`, JSON.stringify(result, null, 2));
     
-    // Extract files from the response structure
+    // Extract files from the response structure - same as estates
     if (result.response && result.response.results && result.response.results[0] && result.response.results[0].data && result.response.results[0].data.records) {
       return result.response.results[0].data.records;
     }
