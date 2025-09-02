@@ -339,107 +339,102 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                       className="border border-border/50 rounded-lg p-4 hover:bg-muted/30 transition-colors cursor-pointer"
                       onClick={() => handleEstateClick(estate)}
                     >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-1">
-                          {estate.elements.objekttitel || `Immobilie #${estate.elements.id || estate.id}`}
-                        </h3>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{estate.elements.lage || estate.elements.ort || estate.elements.plz || 'Lage nicht angegeben'}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Home className="h-3 w-3" />
-                            <span>{estate.elements.objektart || estate.elements.vermarktungsart || 'Typ nicht angegeben'}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-primary mb-1">
-                          {formatPrice(estate.elements.kaufpreis || estate.elements.kaltmiete)}
-                        </div>
-                        <Badge variant="outline">ID: {estate.elements.id || estate.id}</Badge>
-                      </div>
-                    </div>
-
-                    {estate.elements.objektbeschreibung && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {estate.elements.objektbeschreibung}
-                      </p>
-                    )}
-
-                    <div className="flex items-center space-x-6 text-sm">
-                      {estate.elements.wohnflaeche && (
-                        <div className="flex items-center space-x-1">
-                          <Square className="h-3 w-3 text-muted-foreground" />
-                          <span>{estate.elements.wohnflaeche} m²</span>
-                        </div>
-                      )}
-                      {estate.elements.zimmer && (
-                        <div className="flex items-center space-x-1">
-                          <Home className="h-3 w-3 text-muted-foreground" />
-                          <span>{estate.elements.zimmer} Zimmer</span>
-                        </div>
-                      )}
-                      {estate.elements.badezimmer && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-muted-foreground">🚿</span>
-                          <span>{estate.elements.badezimmer} Bad</span>
-                        </div>
-                      )}
-                      {estate.elements.objektnr_extern && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-muted-foreground">📋</span>
-                          <span>{estate.elements.objektnr_extern}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Show only Titelbild */}
-                    {titleImages.length > 0 && (
-                      <div className="mt-4 pt-3 border-t border-border/20">
-                        <div className="relative">
-                          <img 
-                            src={titleImages[0].elements.imageUrl} 
-                            alt={titleImages[0].elements.title || 'Titelbild'}
-                            className="w-full h-32 object-cover rounded-lg shadow-card"
-                          />
-                          <div className="absolute top-2 left-2">
-                            <Badge variant="secondary" className="text-xs">
-                              Titelbild
-                            </Badge>
-                          </div>
-                          {titleImages[0].elements.title && (
-                            <div className="absolute bottom-2 left-2 right-2">
-                              <div className="bg-black/70 text-white p-2 rounded text-sm">
-                                {titleImages[0].elements.title}
+                      {/* Main content in flex layout */}
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Left side - Estate information */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg mb-1">
+                                {estate.elements.objekttitel || `Immobilie #${estate.elements.id || estate.id}`}
+                              </h3>
+                              <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
+                                <div className="flex items-center space-x-1">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{estate.elements.lage || estate.elements.ort || estate.elements.plz || 'Lage nicht angegeben'}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <Home className="h-3 w-3" />
+                                  <span>{estate.elements.objektart || estate.elements.vermarktungsart || 'Typ nicht angegeben'}</span>
+                                </div>
                               </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-primary mb-1">
+                                {formatPrice(estate.elements.kaufpreis || estate.elements.kaltmiete)}
+                              </div>
+                              <Badge variant="outline">ID: {estate.elements.id || estate.id}</Badge>
+                            </div>
+                          </div>
+
+                          {estate.elements.objektbeschreibung && (
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                              {estate.elements.objektbeschreibung}
+                            </p>
+                          )}
+
+                          <div className="flex items-center space-x-6 text-sm">
+                            {estate.elements.wohnflaeche && (
+                              <div className="flex items-center space-x-1">
+                                <Square className="h-3 w-3 text-muted-foreground" />
+                                <span>{estate.elements.wohnflaeche} m²</span>
+                              </div>
+                            )}
+                            {estate.elements.zimmer && (
+                              <div className="flex items-center space-x-1">
+                                <Home className="h-3 w-3 text-muted-foreground" />
+                                <span>{estate.elements.zimmer} Zimmer</span>
+                              </div>
+                            )}
+                            {estate.elements.badezimmer && (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-muted-foreground">🚿</span>
+                                <span>{estate.elements.badezimmer} Bad</span>
+                              </div>
+                            )}
+                            {estate.elements.objektnr_extern && (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-muted-foreground">📋</span>
+                                <span>{estate.elements.objektnr_extern}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right side - Titelbild thumbnail */}
+                        <div className="flex-shrink-0 w-32">
+                          {titleImages.length > 0 ? (
+                            <div className="relative">
+                              <img 
+                                src={titleImages[0].elements.imageUrl} 
+                                alt={titleImages[0].elements.title || 'Titelbild'}
+                                className="w-full h-24 object-cover rounded-lg shadow-card"
+                              />
+                              <div className="absolute top-1 left-1">
+                                <Badge variant="secondary" className="text-xs px-1 py-0">
+                                  Titelbild
+                                </Badge>
+                              </div>
+                              {titleImages[0].elements.title && (
+                                <div className="absolute bottom-1 left-1 right-1">
+                                  <div className="bg-black/70 text-white p-1 rounded text-xs truncate">
+                                    {titleImages[0].elements.title}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="w-full h-24 bg-muted rounded-lg flex items-center justify-center">
+                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
                             </div>
                           )}
                         </div>
-                        
-                        {/* Click hint */}
-                        <div className="mt-2 text-xs text-muted-foreground text-center">
-                          Klicken Sie für alle Details und Bilder
-                        </div>
                       </div>
-                    )}
 
-                    {/* No image placeholder */}
-                    {titleImages.length === 0 && (
-                      <div className="mt-4 pt-3 border-t border-border/20">
-                        <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                            <p className="text-sm text-muted-foreground">Kein Titelbild verfügbar</p>
-                          </div>
-                        </div>
-                        <div className="mt-2 text-xs text-muted-foreground text-center">
-                          Klicken Sie für alle Details
-                        </div>
+                      {/* Click hint */}
+                      <div className="mt-3 text-xs text-muted-foreground text-center">
+                        Klicken Sie für alle Details und Bilder
                       </div>
-                    )}
 
                     </div>
                   );

@@ -56,11 +56,11 @@ export const EstateDetailPanel = ({ estate, estateImages, isOpen, onClose }: Est
         />
       )}
       
-      {/* Sliding Panel */}
+      {/* Sliding Panel - from right, 1/3 width */}
       <div className={`
-        fixed top-0 left-0 h-full w-96 bg-background border-r border-border/50 z-50
+        fixed top-0 right-0 h-full w-1/3 bg-background border-l border-border/50 z-50
         transform transition-transform duration-300 ease-in-out shadow-medium
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isOpen ? 'translate-x-0' : 'translate-x-full'}
       `}>
         {/* Header */}
         <div className="p-4 border-b border-border/50 bg-primary/5">
