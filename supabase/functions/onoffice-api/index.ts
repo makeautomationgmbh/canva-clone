@@ -188,17 +188,20 @@ class OnOfficeAPI {
     return [];
   }
 
-  // Estate images API - using EXACT n8n workflow structure
+  // Estate images API - using EXACT structure from user's n8n workflow
   async getEstateImages(estateId: number) {
-    console.log(`Getting images for estate ID: ${estateId} - using n8n workflow structure`);
+    console.log(`Getting images for estate ID: ${estateId} - using exact n8n structure`);
     
     const result = await this.makeRequest({
       token: this.token,
       secret: this.secret,
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:get',
-      resourceId: estateId.toString(),
+      resourceId: 'estate',  // This stays as "estate", NOT the estateId!
       resourceType: 'file',
-      parameters: {}
+      parameters: {
+        estateid: estateId.toString(),
+        includeImageUrl: 'original'
+      }
     });
     
     console.log(`onOffice API full response:`, JSON.stringify(result, null, 2));
