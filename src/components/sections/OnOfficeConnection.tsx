@@ -113,6 +113,25 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
     await Promise.all(filePromises);
   };
 
+  const testEstateFiles = async () => {
+    if (estates.length === 0) {
+      console.log('No estates available to test files');
+      return;
+    }
+    
+    const firstEstate = estates[0];
+    const estateId = firstEstate.elements.Id || firstEstate.id;
+    
+    console.log(`Testing files API for estate ${estateId}`);
+    
+    try {
+      const files = await getEstateFiles(parseInt(estateId));
+      console.log(`Direct files API test result:`, files);
+    } catch (error) {
+      console.error('Direct files API test failed:', error);
+    }
+  };
+
   const handleFieldConfigSave = (fields: string[]) => {
     setSelectedFields(fields);
     setShowFieldConfig(false);
@@ -387,9 +406,9 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
         <OnOfficeDataDebugger estates={estates} />
       )}
 
-      {/* Toggle Field Config Button */}
+      {/* API Test Buttons */}
       {connected && (
-        <div className="text-center">
+        <div className="text-center space-x-2">
           <Button 
             variant="outline" 
             onClick={() => setShowFieldConfig(!showFieldConfig)}
@@ -397,6 +416,16 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
             <Settings className="h-4 w-4 mr-2" />
             {showFieldConfig ? 'Konfiguration schließen' : 'Felder konfigurieren'}
           </Button>
+          
+          {estates.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={testEstateFiles}
+            >
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Test Files API
+            </Button>
+          )}
         </div>
       )}
     </div>
