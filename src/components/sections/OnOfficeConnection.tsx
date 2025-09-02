@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useOnOfficeAPI, type OnOfficeEstate } from '@/hooks/useOnOfficeAPI';
 import { OnOfficeFieldConfig } from './OnOfficeFieldConfig';
+import { OnOfficeDataDebugger } from './OnOfficeDataDebugger';
 
 interface OnOfficeConnectionProps {
   onConnectionChange?: (connected: boolean) => void;
@@ -56,6 +57,14 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
       }
       
       const estateData = await getEstates(parameters);
+      console.log('Estate data received:', estateData);
+      
+      // Log the first estate's elements to see available fields
+      if (estateData.length > 0) {
+        console.log('First estate elements:', estateData[0].elements);
+        console.log('Available field names:', Object.keys(estateData[0].elements || {}));
+      }
+      
       setEstates(estateData);
     } catch (error) {
       console.error('Failed to load estates:', error);
@@ -277,6 +286,11 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
       {/* Field Configuration */}
       {connected && showFieldConfig && (
         <OnOfficeFieldConfig onSave={handleFieldConfigSave} />
+      )}
+
+      {/* Data Debugger */}
+      {connected && estates.length > 0 && (
+        <OnOfficeDataDebugger estates={estates} />
       )}
 
       {/* Toggle Field Config Button */}
