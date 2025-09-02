@@ -63,6 +63,7 @@ interface CanvasPreset {
 interface TemplateEditorProps {
   estateData?: EstateData;
   onSaveTemplate?: (templateData: any) => void;
+  templateId?: string | null;
 }
 
 const canvasPresets: CanvasPreset[] = [
@@ -73,7 +74,7 @@ const canvasPresets: CanvasPreset[] = [
   { name: "Story (9:16)", ratio: "9:16", width: 450, height: 800 }
 ];
 
-export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorProps) => {
+export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: TemplateEditorProps) => {
   const { user } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
@@ -107,6 +108,19 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
   useEffect(() => {
     loadSavedTemplates();
   }, [user]);
+
+  // Load specific template when templateId is provided
+  useEffect(() => {
+    if (templateId && fabricCanvas && savedTemplates.length > 0) {
+      const template = savedTemplates.find(t => t.id === templateId);
+      if (template) {
+        console.log('Loading template from templateId:', template);
+        loadTemplate(template);
+      } else {
+        console.log('Template not found for ID:', templateId);
+      }
+    }
+  }, [templateId, fabricCanvas, savedTemplates]);
 
   const loadSavedTemplates = async () => {
     if (!user) {

@@ -3,10 +3,12 @@ import { Header } from "@/components/layout/Header";
 import { TemplateEditor as TemplateEditorComponent } from "@/components/sections/TemplateEditor";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const TemplateEditor = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const templateId = searchParams.get('template');
   const [sampleEstateData] = useState({
     kaufpreis: "850.000 €",
     ort: "München",
@@ -75,6 +77,7 @@ const TemplateEditor = () => {
       <TemplateEditorComponent
         estateData={sampleEstateData}
         onSaveTemplate={handleSaveTemplate}
+        templateId={templateId}
       />
     </div>
   );
