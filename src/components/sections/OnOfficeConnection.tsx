@@ -35,6 +35,7 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
   const [estates, setEstates] = useState<OnOfficeEstate[]>([]);
   const [estateFiles, setEstateFiles] = useState<Record<string, any[]>>({});
   const [loadingEstates, setLoadingEstates] = useState(false);
+  const [testingFiles, setTestingFiles] = useState(false);
   const [showFieldConfig, setShowFieldConfig] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
@@ -114,21 +115,35 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
   };
 
   const testEstateFiles = async () => {
+    console.log('🔘 Test Estate Files button clicked!');
+    console.log('Available estates:', estates.length);
+    
     if (estates.length === 0) {
-      console.log('No estates available to test files');
+      console.log('❌ No estates available to test files');
+      alert('No estates available to test files. Please load estates first.');
       return;
     }
     
-    const firstEstate = estates[0];
-    const estateId = firstEstate.elements.Id || firstEstate.id;
-    
-    console.log(`Testing files API for estate ${estateId}`);
+    setTestingFiles(true);
+    console.log('🔄 Starting files API test...');
     
     try {
+      const firstEstate = estates[0];
+      const estateId = firstEstate.elements.Id || firstEstate.id;
+      
+      console.log(`🏠 Testing files API for estate ${estateId}`);
+      console.log('Estate object:', firstEstate);
+      
       const files = await getEstateFiles(parseInt(estateId));
-      console.log(`Direct files API test result:`, files);
+      console.log(`✅ Direct files API test result:`, files);
+      
+      alert(`Files API test completed! Check console for details. Found ${Array.isArray(files) ? files.length : 'unknown'} files.`);
+      
     } catch (error) {
-      console.error('Direct files API test failed:', error);
+      console.error('❌ Direct files API test failed:', error);
+      alert(`Files API test failed: ${error.message}`);
+    } finally {
+      setTestingFiles(false);
     }
   };
 
@@ -421,9 +436,14 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
             <Button 
               variant="outline" 
               onClick={testEstateFiles}
+              disabled={testingFiles}
             >
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Test Files API
+              {testingFiles ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <ImageIcon className="h-4 w-4 mr-2" />
+              )}
+              {testingFiles ? 'Testing...' : 'Test Files API'}
             </Button>
           )}
         </div>
