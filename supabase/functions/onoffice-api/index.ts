@@ -131,8 +131,7 @@ class OnOfficeAPI {
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
       resourceType: 'estate',
       parameters: {
-        data: ['Id', 'objektnr_extern'], // Start with just basic fields
-        listlimit: 20,
+        listlimit: 10,
         ...parameters
       }
     });
