@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Textbox, FabricImage, Rect, Circle, Group } from "fabric";
+import { Canvas as FabricCanvas, Textbox, FabricImage, Rect, Circle, Group, FabricObject } from "fabric";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,11 @@ import {
   AlignRight
 } from "lucide-react";
 import { toast } from "sonner";
+
+// Extend FabricObject to include custom layerId property
+interface ExtendedFabricObject extends FabricObject {
+  layerId?: string;
+}
 
 interface TemplateLayer {
   id: string;
@@ -463,10 +468,18 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     setIsSaving(true);
     
     try {
+      // Add custom layer ID to each fabric object before saving
+      fabricCanvas.getObjects().forEach((obj, index) => {
+        const layer = layers[index];
+        if (layer) {
+          (obj as ExtendedFabricObject).layerId = layer.id;
+        }
+      });
+
       const templateData = {
         user_id: user.id,
         name: templateName,
-        canvas_data: fabricCanvas.toJSON() as any,
+        canvas_data: fabricCanvas.toJSON() as any, // Fabric.js will automatically include custom properties
         canvas_size: JSON.parse(JSON.stringify(selectedPreset)) as any,
         layers: layers.map(layer => ({
           id: layer.id,
@@ -501,31 +514,64 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     if (!fabricCanvas) return;
 
     try {
-      // Clear current canvas
+      console.log('Loading template:', template);
+      
+      // Clear current canvas and layers
       fabricCanvas.clear();
+      setLayers([]);
       
       // Load the saved canvas data
-      fabricCanvas.loadFromJSON(template.canvas_data, () => {
-        // Update canvas size
-        setSelectedPreset(template.canvas_size);
-        fabricCanvas.setDimensions({
-          width: template.canvas_size.width,
-          height: template.canvas_size.height
+      await new Promise<void>((resolve) => {
+        fabricCanvas.loadFromJSON(template.canvas_data, () => {
+          console.log('Canvas loaded, objects:', fabricCanvas.getObjects().length);
+          
+          // Update canvas size
+          setSelectedPreset(template.canvas_size);
+          fabricCanvas.setDimensions({
+            width: template.canvas_size.width,
+            height: template.canvas_size.height
+          });
+          
+          // Update template name
+          setTemplateName(template.name);
+          
+          // Recreate layers array by matching fabric objects to saved layers via layerId
+          const fabricObjects = fabricCanvas.getObjects();
+          const newLayers: TemplateLayer[] = [];
+          
+          // First, try to match by layerId (if available)
+          template.layers.forEach((layerData: any) => {
+            const fabricObject = fabricObjects.find(obj => (obj as ExtendedFabricObject).layerId === layerData.id);
+            if (fabricObject) {
+              newLayers.push({
+                ...layerData,
+                fabricObject: fabricObject
+              });
+            }
+          });
+          
+          // If no layerId matches found, fall back to index-based matching
+          if (newLayers.length === 0 && fabricObjects.length > 0 && template.layers.length > 0) {
+            console.log('Falling back to index-based layer matching');
+            template.layers.forEach((layerData: any, index: number) => {
+              if (fabricObjects[index]) {
+                newLayers.push({
+                  ...layerData,
+                  fabricObject: fabricObjects[index]
+                });
+              }
+            });
+          }
+          
+          console.log('Created layers:', newLayers.length);
+          setLayers(newLayers);
+          fabricCanvas.renderAll();
+          
+          resolve();
         });
-        
-        // Update template name
-        setTemplateName(template.name);
-        
-        // Recreate layers array with new fabric objects
-        const newLayers: TemplateLayer[] = template.layers.map((layerData: any, index: number) => ({
-          ...layerData,
-          fabricObject: fabricCanvas.getObjects()[index]
-        }));
-        
-        setLayers(newLayers);
-        fabricCanvas.renderAll();
-        toast.success('Vorlage geladen!');
       });
+      
+      toast.success('Vorlage geladen!');
     } catch (error) {
       toast.error('Fehler beim Laden der Vorlage');
       console.error('Error loading template:', error);
