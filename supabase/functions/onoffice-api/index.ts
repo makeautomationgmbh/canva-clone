@@ -125,15 +125,54 @@ class OnOfficeAPI {
     return result;
   }
 
-  // Get real estate listings
+  // Get real estate listings with configurable fields
   async getEstates(parameters = {}) {
+    // Standard basic fields that most onOffice systems have
+    const basicFields = [
+      'id',
+      'objektnr_extern',
+      'objektnr_intern', 
+      'status',
+      'kaufpreis',
+      'kaltmiete',
+      'warmmiete',
+      'nebenkosten',
+      'objekttitel',
+      'objektbeschreibung',
+      'objektart',
+      'vermarktungsart',
+      'nutzungsart',
+      'wohnflaeche',
+      'nutzflaeche',
+      'grundstueck',
+      'zimmer',
+      'schlafzimmer',
+      'badezimmer',
+      'etage',
+      'anzahl_etagen',
+      'baujahr',
+      'lage',
+      'plz',
+      'ort',
+      'strasse',
+      'hausnummer',
+      'bundesland',
+      'land',
+      'erstellt_am',
+      'geaendert_am'
+    ];
+
     return this.makeRequest({
       token: this.token,
       secret: this.secret,
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
       resourceType: 'estate',
       parameters: {
-        listlimit: 10,
+        data: basicFields,
+        listlimit: 20,
+        filter: {
+          status: [{ op: '=', val: 1 }] // Only active properties
+        },
         ...parameters
       }
     });

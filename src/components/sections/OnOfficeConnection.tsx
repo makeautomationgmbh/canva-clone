@@ -17,9 +17,11 @@ import {
   Home,
   Euro,
   MapPin,
-  Square
+  Square,
+  Settings
 } from 'lucide-react';
 import { useOnOfficeAPI, type OnOfficeEstate } from '@/hooks/useOnOfficeAPI';
+import { OnOfficeFieldConfig } from './OnOfficeFieldConfig';
 
 interface OnOfficeConnectionProps {
   onConnectionChange?: (connected: boolean) => void;
@@ -29,6 +31,8 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
   const { loading, connected, testConnection, getEstates } = useOnOfficeAPI();
   const [estates, setEstates] = useState<OnOfficeEstate[]>([]);
   const [loadingEstates, setLoadingEstates] = useState(false);
+  const [showFieldConfig, setShowFieldConfig] = useState(false);
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
   useEffect(() => {
     onConnectionChange?.(connected);
@@ -41,15 +45,30 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
     }
   };
 
-  const loadEstates = async () => {
+  const loadEstates = async (customFields?: string[]) => {
     try {
       setLoadingEstates(true);
-      const estateData = await getEstates({ listlimit: 10 });
+      const parameters: any = { listlimit: 10 };
+      
+      // If custom fields are provided, use them
+      if (customFields && customFields.length > 0) {
+        parameters.data = customFields;
+      }
+      
+      const estateData = await getEstates(parameters);
       setEstates(estateData);
     } catch (error) {
       console.error('Failed to load estates:', error);
     } finally {
       setLoadingEstates(false);
+    }
+  };
+
+  const handleFieldConfigSave = (fields: string[]) => {
+    setSelectedFields(fields);
+    setShowFieldConfig(false);
+    if (connected) {
+      loadEstates(fields);
     }
   };
 
@@ -110,7 +129,7 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={loadEstates}
+                  onClick={() => loadEstates()}
                   disabled={loadingEstates}
                 >
                   {loadingEstates ? (
@@ -194,24 +213,24 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg mb-1">
-                          {estate.elements.objekttitel || `Immobilie #${estate.elements.Id || estate.id}`}
+                          {estate.elements.objekttitel || `Immobilie #${estate.elements.id || estate.id}`}
                         </h3>
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-3 w-3" />
-                            <span>{estate.elements.lage || 'Lage nicht angegeben'}</span>
+                            <span>{estate.elements.lage || estate.elements.ort || estate.elements.plz || 'Lage nicht angegeben'}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <Home className="h-3 w-3" />
-                            <span>{estate.elements.objektart || 'Typ nicht angegeben'}</span>
+                            <span>{estate.elements.objektart || estate.elements.vermarktungsart || 'Typ nicht angegeben'}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-primary mb-1">
-                          {formatPrice(estate.elements.kaufpreis)}
+                          {formatPrice(estate.elements.kaufpreis || estate.elements.kaltmiete)}
                         </div>
-                        <Badge variant="outline">ID: {estate.elements.Id || estate.id}</Badge>
+                        <Badge variant="outline">ID: {estate.elements.id || estate.id}</Badge>
                       </div>
                     </div>
 
@@ -253,6 +272,24 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
             </ScrollArea>
           </CardContent>
         </Card>
+      )}
+
+      {/* Field Configuration */}
+      {connected && showFieldConfig && (
+        <OnOfficeFieldConfig onSave={handleFieldConfigSave} />
+      )}
+
+      {/* Toggle Field Config Button */}
+      {connected && (
+        <div className="text-center">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowFieldConfig(!showFieldConfig)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            {showFieldConfig ? 'Konfiguration schließen' : 'Felder konfigurieren'}
+          </Button>
+        </div>
       )}
     </div>
   );
