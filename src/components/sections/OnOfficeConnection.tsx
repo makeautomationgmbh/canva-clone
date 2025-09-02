@@ -80,14 +80,31 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
   };
 
   const loadAllEstateFiles = async (estates: OnOfficeEstate[]) => {
+    console.log('Loading files for estates:', estates.map(e => e.elements.Id || e.id));
+    
     const filePromises = estates.map(async (estate) => {
       const estateId = estate.elements.Id || estate.id;
       if (!estateId) return;
       
       try {
         const files = await getEstateFiles(parseInt(estateId));
-        console.log(`Files for estate ${estateId}:`, files);
-        setEstateFiles(prev => ({ ...prev, [estateId]: files }));
+        console.log(`Raw files response for estate ${estateId}:`, files);
+        console.log(`Files type:`, typeof files, Array.isArray(files));
+        
+        // Handle different response structures
+        let processedFiles: any[] = [];
+        if (Array.isArray(files)) {
+          processedFiles = files;
+        } else if (files && typeof files === 'object' && 'response' in files) {
+          // Extract from API response structure
+          const apiResponse = files as any;
+          if (apiResponse.response?.results?.[0]?.data?.records) {
+            processedFiles = apiResponse.response.results[0].data.records;
+          }
+        }
+        
+        console.log(`Processed files for estate ${estateId}:`, processedFiles);
+        setEstateFiles(prev => ({ ...prev, [estateId]: processedFiles }));
       } catch (error) {
         console.error(`Failed to load files for estate ${estateId}:`, error);
       }
@@ -337,7 +354,21 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                           )}
                         </div>
                       </div>
-                    )}
+                     )}
+
+                     {/* Debug section for estate files */}
+                     {estateFiles[estate.elements.Id || estate.id] && (
+                       <div className="mt-4 pt-3 border-t border-border/20">
+                         <details className="mb-2">
+                           <summary className="text-xs text-muted-foreground cursor-pointer">
+                             🐛 Debug: Files data for estate {estate.elements.Id || estate.id}
+                           </summary>
+                           <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-auto">
+                             {JSON.stringify(estateFiles[estate.elements.Id || estate.id], null, 2)}
+                           </pre>
+                         </details>
+                       </div>
+                     )}
                   </div>
                 ))}
               </div>
