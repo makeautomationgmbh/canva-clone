@@ -14,7 +14,39 @@ const TemplateEditor = () => {
     zimmeranzahl: "5",
     wohnflaeche: "180 m²",
     grundstuecksflaeche: "500 m²",
-    baujahr: "2020"
+    baujahr: "2020",
+    images: [
+      {
+        id: 431,
+        type: "file",
+        elements: {
+          type: "Titelbild",
+          title: "Haus Fassade",
+          imageUrl: "https://crm-beta.onoffice.de/smart20/Objekte/makeautomation-test/27/Titelbild_431.jpg",
+          originalname: "Foto_465.jpg"
+        }
+      },
+      {
+        id: 435,
+        type: "file", 
+        elements: {
+          type: "Foto",
+          title: "Erdgeschoss Wohn-/ Essbereich",
+          imageUrl: "https://crm-beta.onoffice.de/smart20/Objekte/makeautomation-test/27/Foto_435.jpg",
+          originalname: "Foto_431.jpg"
+        }
+      },
+      {
+        id: 447,
+        type: "file",
+        elements: {
+          type: "Grundriss", 
+          title: "Grundriss (optimiert)",
+          imageUrl: "https://crm-beta.onoffice.de/smart20/Objekte/makeautomation-test/27/Foto_447.jpg",
+          originalname: "Grundriss_222.jpg"
+        }
+      }
+    ]
   });
 
   const handleSaveTemplate = (templateData: any) => {

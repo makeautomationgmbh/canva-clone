@@ -1,20 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Textbox, FabricImage, Rect } from "fabric";
+import { Canvas as FabricCanvas, Textbox, FabricImage, Rect, Circle, Group } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { 
   Type, 
   Image as ImageIcon, 
   Square, 
+  Circle as CircleIcon,
   Trash2, 
   Save, 
   Download,
   Settings,
-  Palette
+  Palette,
+  Move,
+  RotateCw,
+  Copy,
+  Layers,
+  AlignCenter,
+  AlignLeft,
+  AlignRight
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,18 +32,44 @@ interface TemplateLayer {
   id: string;
   type: 'text' | 'image' | 'shape';
   name: string;
-  dataBinding?: string; // e.g., 'estate.kaufpreis', 'estate.ort'
+  dataBinding?: string;
   fabricObject?: any;
+  estateImageType?: string; // 'Titelbild' | 'Foto' | 'Grundriss'
 }
 
 interface EstateData {
   [key: string]: any;
+  images?: Array<{
+    id: number;
+    type: string;
+    elements: {
+      type: string;
+      title: string;
+      imageUrl: string;
+      originalname: string;
+    };
+  }>;
+}
+
+interface CanvasPreset {
+  name: string;
+  ratio: string;
+  width: number;
+  height: number;
 }
 
 interface TemplateEditorProps {
   estateData?: EstateData;
   onSaveTemplate?: (templateData: any) => void;
 }
+
+const canvasPresets: CanvasPreset[] = [
+  { name: "Quadrat (1:1)", ratio: "1:1", width: 600, height: 600 },
+  { name: "Portrait (3:4)", ratio: "3:4", width: 600, height: 800 },
+  { name: "Landscape (4:3)", ratio: "4:3", width: 800, height: 600 },
+  { name: "Widescreen (16:9)", ratio: "16:9", width: 800, height: 450 },
+  { name: "Story (9:16)", ratio: "9:16", width: 450, height: 800 }
+];
 
 export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -42,6 +78,10 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
   const [selectedLayer, setSelectedLayer] = useState<TemplateLayer | null>(null);
   const [templateName, setTemplateName] = useState("Neue Vorlage");
   const [activeColor, setActiveColor] = useState("#000000");
+  const [selectedPreset, setSelectedPreset] = useState<CanvasPreset>(canvasPresets[0]);
+  const [fontSize, setFontSize] = useState([20]);
+  const [fontWeight, setFontWeight] = useState("normal");
+  const [textAlign, setTextAlign] = useState("left");
 
   const estateFields = [
     { key: 'kaufpreis', label: 'Kaufpreis' },
@@ -53,12 +93,18 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
     { key: 'baujahr', label: 'Baujahr' }
   ];
 
+  const imageTypes = [
+    { value: 'Titelbild', label: 'Titelbild' },
+    { value: 'Foto', label: 'Foto' },
+    { value: 'Grundriss', label: 'Grundriss' }
+  ];
+
   useEffect(() => {
     if (!canvasRef.current) return;
 
     const canvas = new FabricCanvas(canvasRef.current, {
-      width: 800,
-      height: 600,
+      width: selectedPreset.width,
+      height: selectedPreset.height,
       backgroundColor: "#ffffff",
     });
 
@@ -67,6 +113,33 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
       if (activeObject) {
         const layer = layers.find(l => l.fabricObject === activeObject);
         setSelectedLayer(layer || null);
+        
+        // Update UI controls based on selected object
+        if (activeObject.type === 'textbox') {
+          const textObj = activeObject as Textbox;
+          setFontSize([textObj.fontSize || 20]);
+          setFontWeight(String(textObj.fontWeight || 'normal'));
+          setTextAlign(textObj.textAlign || 'left');
+          const fillColor = typeof textObj.fill === 'string' ? textObj.fill : '#000000';
+          setActiveColor(fillColor);
+        }
+      }
+    });
+
+    canvas.on('selection:updated', (e) => {
+      const activeObject = e.selected?.[0];
+      if (activeObject) {
+        const layer = layers.find(l => l.fabricObject === activeObject);
+        setSelectedLayer(layer || null);
+        
+        if (activeObject.type === 'textbox') {
+          const textObj = activeObject as Textbox;
+          setFontSize([textObj.fontSize || 20]);
+          setFontWeight(String(textObj.fontWeight || 'normal'));
+          setTextAlign(textObj.textAlign || 'left');
+          const fillColor = typeof textObj.fill === 'string' ? textObj.fill : '#000000';
+          setActiveColor(fillColor);
+        }
       }
     });
 
@@ -80,7 +153,19 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
     return () => {
       canvas.dispose();
     };
-  }, []);
+  }, [selectedPreset]);
+
+  const changeCanvasSize = (preset: CanvasPreset) => {
+    if (!fabricCanvas) return;
+    
+    setSelectedPreset(preset);
+    fabricCanvas.setDimensions({
+      width: preset.width,
+      height: preset.height
+    });
+    fabricCanvas.renderAll();
+    toast(`Canvas-Größe geändert zu ${preset.name}`);
+  };
 
   const addTextLayer = () => {
     if (!fabricCanvas) return;
@@ -89,9 +174,11 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
       left: 100,
       top: 100,
       width: 200,
-      fontSize: 20,
+      fontSize: fontSize[0],
       fill: activeColor,
-      fontFamily: 'Arial'
+      fontFamily: 'Arial',
+      fontWeight: fontWeight,
+      textAlign: textAlign
     });
 
     fabricCanvas.add(textbox);
@@ -117,20 +204,38 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
       top: 100,
       width: 200,
       height: 150,
-      fill: '#f0f0f0',
-      stroke: '#ddd',
+      fill: '#f8f9fa',
+      stroke: '#6c757d',
       strokeWidth: 2,
-      strokeDashArray: [5, 5]
+      strokeDashArray: [10, 5],
+      rx: 8,
+      ry: 8
     });
 
-    fabricCanvas.add(rect);
-    fabricCanvas.setActiveObject(rect);
+    // Add text overlay to indicate it's an image placeholder
+    const placeholderText = new Textbox('Bild Platzhalter', {
+      left: 120,
+      top: 165,
+      fontSize: 12,
+      fill: '#6c757d',
+      fontFamily: 'Arial',
+      selectable: false,
+      evented: false
+    });
+
+    const group = new Group([rect, placeholderText], {
+      left: 100,
+      top: 100
+    });
+    
+    fabricCanvas.add(group);
+    fabricCanvas.setActiveObject(group);
 
     const newLayer: TemplateLayer = {
       id: `image_${Date.now()}`,
       type: 'image',
       name: `Bild ${layers.length + 1}`,
-      fabricObject: rect
+      fabricObject: group
     };
 
     setLayers([...layers, newLayer]);
@@ -138,7 +243,34 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
     toast("Bild-Platzhalter hinzugefügt");
   };
 
-  const addShape = () => {
+  const addCircleShape = () => {
+    if (!fabricCanvas) return;
+
+    const circle = new Circle({
+      left: 100,
+      top: 100,
+      radius: 50,
+      fill: activeColor,
+      stroke: '#000000',
+      strokeWidth: 0
+    });
+
+    fabricCanvas.add(circle);
+    fabricCanvas.setActiveObject(circle);
+
+    const newLayer: TemplateLayer = {
+      id: `circle_${Date.now()}`,
+      type: 'shape',
+      name: `Kreis ${layers.length + 1}`,
+      fabricObject: circle
+    };
+
+    setLayers([...layers, newLayer]);
+    setSelectedLayer(newLayer);
+    toast("Kreis hinzugefügt");
+  };
+
+  const addRectangleShape = () => {
     if (!fabricCanvas) return;
 
     const rect = new Rect({
@@ -146,22 +278,104 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
       top: 100,
       width: 100,
       height: 100,
-      fill: activeColor
+      fill: activeColor,
+      stroke: '#000000',
+      strokeWidth: 0,
+      rx: 0,
+      ry: 0
     });
 
     fabricCanvas.add(rect);
     fabricCanvas.setActiveObject(rect);
 
     const newLayer: TemplateLayer = {
-      id: `shape_${Date.now()}`,
+      id: `rectangle_${Date.now()}`,
       type: 'shape',
-      name: `Form ${layers.length + 1}`,
+      name: `Rechteck ${layers.length + 1}`,
       fabricObject: rect
     };
 
     setLayers([...layers, newLayer]);
     setSelectedLayer(newLayer);
-    toast("Form hinzugefügt");
+    toast("Rechteck hinzugefügt");
+  };
+
+  const updateSelectedObjectProperty = (property: string, value: any) => {
+    if (!selectedLayer?.fabricObject || !fabricCanvas) return;
+
+    selectedLayer.fabricObject.set(property, value);
+    fabricCanvas.renderAll();
+  };
+
+  const duplicateSelectedLayer = () => {
+    if (!selectedLayer || !fabricCanvas) return;
+
+    selectedLayer.fabricObject.clone((cloned: any) => {
+      cloned.set({
+        left: cloned.left + 20,
+        top: cloned.top + 20,
+      });
+      fabricCanvas.add(cloned);
+      fabricCanvas.setActiveObject(cloned);
+
+      const newLayer: TemplateLayer = {
+        id: `${selectedLayer.type}_${Date.now()}`,
+        type: selectedLayer.type,
+        name: `${selectedLayer.name} Kopie`,
+        fabricObject: cloned,
+        dataBinding: selectedLayer.dataBinding,
+        estateImageType: selectedLayer.estateImageType
+      };
+
+      setLayers([...layers, newLayer]);
+      setSelectedLayer(newLayer);
+      toast("Ebene dupliziert");
+    });
+  };
+
+  const loadEstateImage = (layerId: string, imageType: string) => {
+    if (!estateData?.images || !fabricCanvas) return;
+
+    const estateImage = estateData.images.find(img => img.elements.type === imageType);
+    if (!estateImage) {
+      toast.error(`Kein ${imageType} Bild gefunden`);
+      return;
+    }
+
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer) return;
+
+    FabricImage.fromURL(estateImage.elements.imageUrl, {
+      crossOrigin: 'anonymous'
+    }).then((img) => {
+      // Scale image to fit placeholder
+      const placeholder = layer.fabricObject;
+      const scaleX = placeholder.width! / img.width!;
+      const scaleY = placeholder.height! / img.height!;
+      const scale = Math.min(scaleX, scaleY);
+
+      img.set({
+        left: placeholder.left,
+        top: placeholder.top,
+        scaleX: scale,
+        scaleY: scale
+      });
+
+      fabricCanvas.remove(placeholder);
+      fabricCanvas.add(img);
+      fabricCanvas.setActiveObject(img);
+
+      // Update layer
+      setLayers(layers.map(l => 
+        l.id === layerId 
+          ? { ...l, fabricObject: img, estateImageType: imageType }
+          : l
+      ));
+
+      toast.success(`${imageType} Bild geladen`);
+    }).catch(() => {
+      toast.error("Fehler beim Laden des Bildes");
+    });
   };
 
   const deleteSelectedLayer = () => {
@@ -199,11 +413,13 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
     const templateData = {
       name: templateName,
       canvasData: fabricCanvas.toJSON(),
+      canvasSize: selectedPreset,
       layers: layers.map(layer => ({
         id: layer.id,
         type: layer.type,
         name: layer.name,
-        dataBinding: layer.dataBinding
+        dataBinding: layer.dataBinding,
+        estateImageType: layer.estateImageType
       }))
     };
 
@@ -231,7 +447,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
   return (
     <div className="h-screen flex">
       {/* Left Sidebar - Tools */}
-      <div className="w-64 border-r bg-background p-4 space-y-4">
+      <div className="w-72 border-r bg-background p-4 space-y-4 overflow-y-auto">
         <div>
           <Label htmlFor="templateName">Vorlagen Name</Label>
           <Input
@@ -242,10 +458,32 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
           />
         </div>
 
+        <div>
+          <Label>Canvas-Größe</Label>
+          <Select 
+            value={selectedPreset.ratio}
+            onValueChange={(value) => {
+              const preset = canvasPresets.find(p => p.ratio === value);
+              if (preset) changeCanvasSize(preset);
+            }}
+          >
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {canvasPresets.map((preset) => (
+                <SelectItem key={preset.ratio} value={preset.ratio}>
+                  {preset.name} ({preset.width}x{preset.height})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Separator />
 
         <div>
-          <h3 className="font-semibold mb-2">Werkzeuge</h3>
+          <h3 className="font-semibold mb-3">Elemente hinzufügen</h3>
           <div className="space-y-2">
             <Button
               variant="outline"
@@ -254,7 +492,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
               onClick={addTextLayer}
             >
               <Type className="h-4 w-4 mr-2" />
-              Text hinzufügen
+              Text
             </Button>
             <Button
               variant="outline"
@@ -263,19 +501,108 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
               onClick={addImagePlaceholder}
             >
               <ImageIcon className="h-4 w-4 mr-2" />
-              Bild hinzufügen
+              Bild Platzhalter
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="w-full justify-start"
-              onClick={addShape}
+              onClick={addRectangleShape}
             >
               <Square className="h-4 w-4 mr-2" />
-              Form hinzufügen
+              Rechteck
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={addCircleShape}
+            >
+              <CircleIcon className="h-4 w-4 mr-2" />
+              Kreis
             </Button>
           </div>
         </div>
+
+        {selectedLayer && selectedLayer.type === 'text' && (
+          <>
+            <Separator />
+            <div>
+              <h3 className="font-semibold mb-3">Text Eigenschaften</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label>Schriftgröße: {fontSize[0]}px</Label>
+                  <Slider
+                    value={fontSize}
+                    onValueChange={(value) => {
+                      setFontSize(value);
+                      updateSelectedObjectProperty('fontSize', value[0]);
+                    }}
+                    max={100}
+                    min={8}
+                    step={1}
+                    className="mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label>Schriftgewicht</Label>
+                  <Select 
+                    value={fontWeight}
+                    onValueChange={(value) => {
+                      setFontWeight(value);
+                      updateSelectedObjectProperty('fontWeight', value);
+                    }}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="bold">Fett</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Textausrichtung</Label>
+                  <div className="flex space-x-1 mt-1">
+                    <Button
+                      variant={textAlign === 'left' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setTextAlign('left');
+                        updateSelectedObjectProperty('textAlign', 'left');
+                      }}
+                    >
+                      <AlignLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={textAlign === 'center' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setTextAlign('center');
+                        updateSelectedObjectProperty('textAlign', 'center');
+                      }}
+                    >
+                      <AlignCenter className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={textAlign === 'right' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setTextAlign('right');
+                        updateSelectedObjectProperty('textAlign', 'right');
+                      }}
+                    >
+                      <AlignRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
 
         <Separator />
 
@@ -285,7 +612,12 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
             id="colorPicker"
             type="color"
             value={activeColor}
-            onChange={(e) => setActiveColor(e.target.value)}
+            onChange={(e) => {
+              setActiveColor(e.target.value);
+              if (selectedLayer?.fabricObject) {
+                updateSelectedObjectProperty('fill', e.target.value);
+              }
+            }}
             className="mt-1 h-10"
           />
         </div>
@@ -295,6 +627,17 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
         <div>
           <h3 className="font-semibold mb-2">Aktionen</h3>
           <div className="space-y-2">
+            {selectedLayer && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={duplicateSelectedLayer}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Duplizieren
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -318,16 +661,19 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
       </div>
 
       {/* Main Canvas Area */}
-      <div className="flex-1 p-4 bg-muted/20">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mx-auto" style={{ width: 'fit-content' }}>
+      <div className="flex-1 p-4 bg-muted/20 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden" style={{ width: 'fit-content' }}>
           <canvas ref={canvasRef} className="border" />
         </div>
       </div>
 
       {/* Right Sidebar - Layer Properties */}
-      <div className="w-80 border-l bg-background p-4 space-y-4">
+      <div className="w-80 border-l bg-background p-4 space-y-4 overflow-y-auto">
         <div>
-          <h3 className="font-semibold mb-2">Ebenen</h3>
+          <div className="flex items-center space-x-2 mb-3">
+            <Layers className="h-4 w-4" />
+            <h3 className="font-semibold">Ebenen</h3>
+          </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {layers.map((layer) => (
               <div
@@ -344,11 +690,18 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
                     {layer.type === 'shape' && <Square className="h-4 w-4" />}
                     <span className="text-sm">{layer.name}</span>
                   </div>
-                  {layer.dataBinding && (
-                    <Badge variant="secondary" className="text-xs">
-                      Daten
-                    </Badge>
-                  )}
+                  <div className="flex space-x-1">
+                    {layer.dataBinding && (
+                      <Badge variant="secondary" className="text-xs">
+                        Daten
+                      </Badge>
+                    )}
+                    {layer.estateImageType && (
+                      <Badge variant="outline" className="text-xs">
+                        {layer.estateImageType}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -386,27 +739,62 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
                   />
                 </div>
 
-                <div>
-                  <Label>Daten Verknüpfung</Label>
-                  <select
-                    value={selectedLayer.dataBinding || ''}
-                    onChange={(e) => updateLayerDataBinding(selectedLayer.id, e.target.value)}
-                    className="w-full mt-1 p-2 border rounded-md"
-                  >
-                    <option value="">Keine Verknüpfung</option>
-                    {estateFields.map((field) => (
-                      <option key={field.key} value={`estate.${field.key}`}>
-                        {field.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {selectedLayer.type === 'text' && (
+                  <div>
+                    <Label>Text Daten Verknüpfung</Label>
+                    <Select
+                      value={selectedLayer.dataBinding || ''}
+                      onValueChange={(value) => updateLayerDataBinding(selectedLayer.id, value)}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Datenfeld auswählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Keine Verknüpfung</SelectItem>
+                        {estateFields.map((field) => (
+                          <SelectItem key={field.key} value={`estate.${field.key}`}>
+                            {field.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {selectedLayer.type === 'image' && estateData?.images && (
+                  <div>
+                    <Label>Estate Bild laden</Label>
+                    <Select
+                      onValueChange={(value) => loadEstateImage(selectedLayer.id, value)}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Bildtyp auswählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {imageTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {selectedLayer.dataBinding && estateData && (
                   <div>
                     <Label>Aktueller Wert</Label>
                     <div className="p-2 bg-muted rounded mt-1 text-sm">
                       {selectedLayer.dataBinding.split('.').reduce((obj, key) => obj?.[key], estateData) || 'Nicht verfügbar'}
+                    </div>
+                  </div>
+                )}
+
+                {selectedLayer.estateImageType && estateData?.images && (
+                  <div>
+                    <Label>Geladenes Bild</Label>
+                    <div className="p-2 bg-muted rounded mt-1 text-sm">
+                      {selectedLayer.estateImageType}
                     </div>
                   </div>
                 )}
