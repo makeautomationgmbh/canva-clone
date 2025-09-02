@@ -27,59 +27,75 @@ class OnOfficeAPI {
     this.secret = secret;
   }
 
-  private generateHMAC(publicKey: string, timestamp: number, data: string): string {
-    const message = `${publicKey}${timestamp}${this.token}${data}`;
+  private async generateHMACv2(timestamp: number, token: string, resourceType: string, actionId: string): Promise<string> {
+    // HMAC v2 calculation as per onOffice documentation
+    const message = `${timestamp}${token}${resourceType}${actionId}`;
     
-    // Create HMAC-SHA256 signature
+    console.log('HMAC v2 message:', message);
+    
     const key = new TextEncoder().encode(this.secret);
     const messageBytes = new TextEncoder().encode(message);
     
-    return crypto.subtle.importKey(
+    const cryptoKey = await crypto.subtle.importKey(
       'raw',
       key,
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['sign']
-    ).then(cryptoKey => {
-      return crypto.subtle.sign('HMAC', cryptoKey, messageBytes);
-    }).then(signature => {
-      return Array.from(new Uint8Array(signature))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-    });
+    );
+    
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageBytes);
+    const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    
+    console.log('Generated HMAC v2:', base64Signature);
+    return base64Signature;
   }
 
   async makeRequest(config: OnOfficeConfig) {
     const timestamp = Math.floor(Date.now() / 1000);
-    const publicKey = crypto.randomUUID();
     
-    const requestData = {
+    // Create the action data structure
+    const actionData = {
       actionid: config.actionId,
       resourceid: config.resourceId || '',
-      identifier: config.identifier || '',
       resourcetype: config.resourceType,
+      identifier: config.identifier || '',
+      timestamp: timestamp,
+      hmac_version: 2,
       parameters: config.parameters || {}
     };
 
-    const data = JSON.stringify(requestData);
-    const hmac = await this.generateHMAC(publicKey, timestamp, data);
+    // Generate HMAC v2
+    const hmac = await this.generateHMACv2(
+      timestamp, 
+      this.token, 
+      config.resourceType, 
+      config.actionId
+    );
+    
+    actionData.hmac = hmac;
 
-    const formData = new FormData();
-    formData.append('token', this.token);
-    formData.append('request', data);
-    formData.append('hmac', hmac);
-    formData.append('publickey', publicKey);
-    formData.append('timestamp', timestamp.toString());
+    // Create the complete request structure as per onOffice documentation
+    const requestData = {
+      token: this.token,
+      request: {
+        actions: [actionData]
+      }
+    };
 
     console.log('Making onOffice API request:', {
       actionId: config.actionId,
       resourceType: config.resourceType,
-      timestamp
+      timestamp,
+      parameters: config.parameters
     });
 
     const response = await fetch(this.baseUrl, {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
     });
 
     if (!response.ok) {
@@ -87,7 +103,7 @@ class OnOfficeAPI {
     }
 
     const result = await response.json();
-    console.log('onOffice API response:', result);
+    console.log('onOffice API response:', JSON.stringify(result, null, 2));
     
     return result;
   }
@@ -100,8 +116,11 @@ class OnOfficeAPI {
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
       resourceType: 'estate',
       parameters: {
-        data: ['Id', 'kaufpreis', 'lage', 'objekttitel', 'objektbeschreibung', 'objektart', 'wohnflaeche', 'grundstueck', 'zimmer', 'badezimmer'],
+        data: ['Id', 'kaufpreis', 'lage', 'objekttitel', 'objektbeschreibung', 'objektart', 'wohnflaeche', 'grundstueck', 'zimmer', 'badezimmer', 'objektnr_extern'],
         listlimit: 50,
+        filter: {
+          status: [{ op: '=', val: 1 }] // Only active properties
+        },
         ...parameters
       }
     });

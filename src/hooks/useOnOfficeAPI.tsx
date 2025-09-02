@@ -3,16 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface OnOfficeEstate {
-  Id: number;
-  kaufpreis?: string;
-  lage?: string;
-  objekttitel?: string;
-  objektbeschreibung?: string;
-  objektart?: string;
-  wohnflaeche?: string;
-  grundstueck?: string;
-  zimmer?: string;
-  badezimmer?: string;
+  id: number;
+  elements: {
+    Id?: number;
+    kaufpreis?: string;
+    lage?: string;
+    objekttitel?: string;
+    objektbeschreibung?: string;
+    objektart?: string;
+    wohnflaeche?: string;
+    grundstueck?: string;
+    zimmer?: string;
+    badezimmer?: string;
+    objektnr_extern?: string;
+    [key: string]: any;
+  };
 }
 
 export interface OnOfficeFile {
@@ -82,17 +87,18 @@ export const useOnOfficeAPI = () => {
 
   const getEstates = async (parameters = {}): Promise<OnOfficeEstate[]> => {
     const result = await callAPI('getEstates', { parameters });
-    return result?.response?.results || [];
+    // onOffice API returns data in response.results[0].data.records
+    return result?.response?.results?.[0]?.data?.records || [];
   };
 
   const getEstateFiles = async (estateId: number): Promise<OnOfficeFile[]> => {
     const result = await callAPI('getEstateFiles', { estateId });
-    return result?.response?.results || [];
+    return result?.response?.results?.[0]?.data?.records || [];
   };
 
   const getAddresses = async (parameters = {}): Promise<OnOfficeAddress[]> => {
     const result = await callAPI('getAddresses', { parameters });
-    return result?.response?.results || [];
+    return result?.response?.results?.[0]?.data?.records || [];
   };
 
   return {

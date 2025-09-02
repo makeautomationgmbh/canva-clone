@@ -190,54 +190,60 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
             <ScrollArea className="h-96">
               <div className="space-y-4">
                 {estates.map((estate, index) => (
-                  <div key={estate.Id || index} className="border border-border/50 rounded-lg p-4 hover:bg-muted/30 transition-colors">
+                  <div key={estate.id || index} className="border border-border/50 rounded-lg p-4 hover:bg-muted/30 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg mb-1">
-                          {estate.objekttitel || `Immobilie #${estate.Id}`}
+                          {estate.elements.objekttitel || `Immobilie #${estate.elements.Id || estate.id}`}
                         </h3>
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-3 w-3" />
-                            <span>{estate.lage || 'Lage nicht angegeben'}</span>
+                            <span>{estate.elements.lage || 'Lage nicht angegeben'}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <Home className="h-3 w-3" />
-                            <span>{estate.objektart || 'Typ nicht angegeben'}</span>
+                            <span>{estate.elements.objektart || 'Typ nicht angegeben'}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-primary mb-1">
-                          {formatPrice(estate.kaufpreis)}
+                          {formatPrice(estate.elements.kaufpreis)}
                         </div>
-                        <Badge variant="outline">ID: {estate.Id}</Badge>
+                        <Badge variant="outline">ID: {estate.elements.Id || estate.id}</Badge>
                       </div>
                     </div>
 
-                    {estate.objektbeschreibung && (
+                    {estate.elements.objektbeschreibung && (
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {estate.objektbeschreibung}
+                        {estate.elements.objektbeschreibung}
                       </p>
                     )}
 
                     <div className="flex items-center space-x-6 text-sm">
-                      {estate.wohnflaeche && (
+                      {estate.elements.wohnflaeche && (
                         <div className="flex items-center space-x-1">
                           <Square className="h-3 w-3 text-muted-foreground" />
-                          <span>{estate.wohnflaeche} m²</span>
+                          <span>{estate.elements.wohnflaeche} m²</span>
                         </div>
                       )}
-                      {estate.zimmer && (
+                      {estate.elements.zimmer && (
                         <div className="flex items-center space-x-1">
                           <Home className="h-3 w-3 text-muted-foreground" />
-                          <span>{estate.zimmer} Zimmer</span>
+                          <span>{estate.elements.zimmer} Zimmer</span>
                         </div>
                       )}
-                      {estate.badezimmer && (
+                      {estate.elements.badezimmer && (
                         <div className="flex items-center space-x-1">
                           <span className="text-muted-foreground">🚿</span>
-                          <span>{estate.badezimmer} Bad</span>
+                          <span>{estate.elements.badezimmer} Bad</span>
+                        </div>
+                      )}
+                      {estate.elements.objektnr_extern && (
+                        <div className="flex items-center space-x-1">
+                          <span className="text-muted-foreground">📋</span>
+                          <span>{estate.elements.objektnr_extern}</span>
                         </div>
                       )}
                     </div>
