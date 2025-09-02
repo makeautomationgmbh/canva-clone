@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Textbox, FabricImage, Rect, Circle, Group } from "fabric";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,6 +74,7 @@ const canvasPresets: CanvasPreset[] = [
 ];
 
 export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorProps) => {
+  const { user } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [layers, setLayers] = useState<TemplateLayer[]>([]);
@@ -82,6 +85,8 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
   const [fontSize, setFontSize] = useState([20]);
   const [fontWeight, setFontWeight] = useState("normal");
   const [textAlign, setTextAlign] = useState("left");
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedTemplates, setSavedTemplates] = useState<any[]>([]);
 
   const estateFields = [
     { key: 'kaufpreis', label: 'Kaufpreis' },
@@ -98,6 +103,26 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
     { value: 'Foto', label: 'Foto' },
     { value: 'Grundriss', label: 'Grundriss' }
   ];
+
+  useEffect(() => {
+    loadSavedTemplates();
+  }, [user]);
+
+  const loadSavedTemplates = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('templates')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    
+    if (error) {
+      toast.error('Fehler beim Laden der Vorlagen');
+      console.error('Error loading templates:', error);
+    } else {
+      setSavedTemplates(data || []);
+    }
+  };
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -407,24 +432,99 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
     }
   };
 
-  const saveTemplate = () => {
+  const saveTemplate = async () => {
+    if (!fabricCanvas || !user) {
+      toast.error('Sie müssen angemeldet sein, um Vorlagen zu speichern');
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const templateData = {
+        user_id: user.id,
+        name: templateName,
+        canvas_data: fabricCanvas.toJSON() as any,
+        canvas_size: JSON.parse(JSON.stringify(selectedPreset)) as any,
+        layers: layers.map(layer => ({
+          id: layer.id,
+          type: layer.type,
+          name: layer.name,
+          dataBinding: layer.dataBinding || null,
+          estateImageType: layer.estateImageType || null
+        })) as any
+      };
+
+      const { error } = await supabase
+        .from('templates')
+        .insert(templateData);
+
+      if (error) {
+        toast.error('Fehler beim Speichern der Vorlage');
+        console.error('Error saving template:', error);
+      } else {
+        toast.success('Vorlage erfolgreich gespeichert!');
+        onSaveTemplate?.(templateData);
+        loadSavedTemplates(); // Refresh the templates list
+      }
+    } catch (error) {
+      toast.error('Unerwarteter Fehler beim Speichern');
+      console.error('Unexpected error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const loadTemplate = async (template: any) => {
     if (!fabricCanvas) return;
 
-    const templateData = {
-      name: templateName,
-      canvasData: fabricCanvas.toJSON(),
-      canvasSize: selectedPreset,
-      layers: layers.map(layer => ({
-        id: layer.id,
-        type: layer.type,
-        name: layer.name,
-        dataBinding: layer.dataBinding,
-        estateImageType: layer.estateImageType
-      }))
-    };
+    try {
+      // Clear current canvas
+      fabricCanvas.clear();
+      
+      // Load the saved canvas data
+      fabricCanvas.loadFromJSON(template.canvas_data, () => {
+        // Update canvas size
+        setSelectedPreset(template.canvas_size);
+        fabricCanvas.setDimensions({
+          width: template.canvas_size.width,
+          height: template.canvas_size.height
+        });
+        
+        // Update template name
+        setTemplateName(template.name);
+        
+        // Recreate layers array with new fabric objects
+        const newLayers: TemplateLayer[] = template.layers.map((layerData: any, index: number) => ({
+          ...layerData,
+          fabricObject: fabricCanvas.getObjects()[index]
+        }));
+        
+        setLayers(newLayers);
+        fabricCanvas.renderAll();
+        toast.success('Vorlage geladen!');
+      });
+    } catch (error) {
+      toast.error('Fehler beim Laden der Vorlage');
+      console.error('Error loading template:', error);
+    }
+  };
 
-    onSaveTemplate?.(templateData);
-    toast("Vorlage gespeichert!");
+  const deleteTemplate = async (templateId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('templates')
+      .delete()
+      .eq('id', templateId);
+
+    if (error) {
+      toast.error('Fehler beim Löschen der Vorlage');
+      console.error('Error deleting template:', error);
+    } else {
+      toast.success('Vorlage gelöscht!');
+      loadSavedTemplates();
+    }
   };
 
   const exportImage = () => {
@@ -521,6 +621,52 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
               <CircleIcon className="h-4 w-4 mr-2" />
               Kreis
             </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h3 className="font-semibold mb-3">Gespeicherte Vorlagen</h3>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {savedTemplates.map((template) => (
+              <div
+                key={template.id}
+                className="p-2 border rounded hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{template.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(template.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex space-x-1 ml-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => loadTemplate(template)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Download className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteTemplate(template.id)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {savedTemplates.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Keine gespeicherten Vorlagen
+              </p>
+            )}
           </div>
         </div>
 
@@ -643,9 +789,10 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
               size="sm"
               className="w-full justify-start"
               onClick={saveTemplate}
+              disabled={isSaving || !user}
             >
               <Save className="h-4 w-4 mr-2" />
-              Speichern
+              {isSaving ? 'Speichern...' : 'Speichern'}
             </Button>
             <Button
               variant="outline"
