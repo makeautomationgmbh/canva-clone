@@ -129,7 +129,7 @@ class OnOfficeAPI {
   async getEstates(parameters = {}) {
     // Standard basic fields that most onOffice systems have
     const basicFields = [
-      'id',
+      'Id',
       'objektnr_extern',
       'objektnr_intern', 
       'status',
