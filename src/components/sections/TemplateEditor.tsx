@@ -109,17 +109,25 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
   }, [user]);
 
   const loadSavedTemplates = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, skipping template load');
+      return;
+    }
+    
+    console.log('Loading templates for user:', user.id);
     
     const { data, error } = await supabase
       .from('templates')
       .select('*')
       .order('updated_at', { ascending: false });
     
+    console.log('Template query result:', { data, error });
+    
     if (error) {
       toast.error('Fehler beim Laden der Vorlagen');
       console.error('Error loading templates:', error);
     } else {
+      console.log('Setting templates:', data);
       setSavedTemplates(data || []);
     }
   };
