@@ -128,35 +128,18 @@ class OnOfficeAPI {
   // Get real estate listings with configurable fields
   async getEstates(parameters = {}) {
     // Standard basic fields that most onOffice systems have
+    // Use only the most basic fields that exist in every onOffice system
     const basicFields = [
       'Id',
       'objektnr_extern',
-      'Status',
       'kaufpreis',
       'kaltmiete',
-      'warmmiete',
-      'nebenkosten',
       'objekttitel',
-      'objektbeschreibung',
       'objektart',
-      'vermarktungsart',
-      'nutzungsart',
       'wohnflaeche',
-      'nutzflaeche',
-      'grundstueck',
       'zimmer',
-      'schlafzimmer',
-      'badezimmer',
-      'etage',
-      'anzahl_etagen',
-      'baujahr',
-      'lage',
       'plz',
-      'ort',
-      'strasse',
-      'hausnummer',
-      'bundesland',
-      'land'
+      'ort'
     ];
 
     return this.makeRequest({
