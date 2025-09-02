@@ -131,8 +131,7 @@ class OnOfficeAPI {
     const basicFields = [
       'Id',
       'objektnr_extern',
-      'objektnr_intern', 
-      'status',
+      'Status',
       'kaufpreis',
       'kaltmiete',
       'warmmiete',
@@ -157,9 +156,7 @@ class OnOfficeAPI {
       'strasse',
       'hausnummer',
       'bundesland',
-      'land',
-      'erstellt_am',
-      'geaendert_am'
+      'land'
     ];
 
     return this.makeRequest({
