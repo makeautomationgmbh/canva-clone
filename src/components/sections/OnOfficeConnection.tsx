@@ -35,7 +35,6 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
   const [estates, setEstates] = useState<OnOfficeEstate[]>([]);
   const [estateFiles, setEstateFiles] = useState<Record<string, any[]>>({});
   const [loadingEstates, setLoadingEstates] = useState(false);
-  const [loadingFiles, setLoadingFiles] = useState<Record<string, boolean>>({});
   const [showFieldConfig, setShowFieldConfig] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
@@ -70,11 +69,31 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
       }
       
       setEstates(estateData);
+      
+      // Automatically load files for all estates
+      await loadAllEstateFiles(estateData);
     } catch (error) {
       console.error('Failed to load estates:', error);
     } finally {
       setLoadingEstates(false);
     }
+  };
+
+  const loadAllEstateFiles = async (estates: OnOfficeEstate[]) => {
+    const filePromises = estates.map(async (estate) => {
+      const estateId = estate.elements.Id || estate.id;
+      if (!estateId) return;
+      
+      try {
+        const files = await getEstateFiles(parseInt(estateId));
+        console.log(`Files for estate ${estateId}:`, files);
+        setEstateFiles(prev => ({ ...prev, [estateId]: files }));
+      } catch (error) {
+        console.error(`Failed to load files for estate ${estateId}:`, error);
+      }
+    });
+    
+    await Promise.all(filePromises);
   };
 
   const handleFieldConfigSave = (fields: string[]) => {
@@ -85,20 +104,6 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
     }
   };
 
-  const loadEstateFiles = async (estateId: string) => {
-    if (loadingFiles[estateId] || estateFiles[estateId]) return; // Don't load if already loading or loaded
-    
-    try {
-      setLoadingFiles(prev => ({ ...prev, [estateId]: true }));
-      const files = await getEstateFiles(parseInt(estateId));
-      console.log(`Files for estate ${estateId}:`, files);
-      setEstateFiles(prev => ({ ...prev, [estateId]: files }));
-    } catch (error) {
-      console.error(`Failed to load files for estate ${estateId}:`, error);
-    } finally {
-      setLoadingFiles(prev => ({ ...prev, [estateId]: false }));
-    }
-  };
 
   const formatPrice = (price: string | undefined) => {
     if (!price) return 'Preis auf Anfrage';
@@ -296,28 +301,13 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                     </div>
 
                     {/* Estate Images Section */}
-                    <div className="mt-4 pt-3 border-t border-border/20">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-medium flex items-center space-x-2">
+                    {estateFiles[estate.elements.Id || estate.id] && estateFiles[estate.elements.Id || estate.id].length > 0 && (
+                      <div className="mt-4 pt-3 border-t border-border/20">
+                        <h4 className="text-sm font-medium flex items-center space-x-2 mb-3">
                           <ImageIcon className="h-4 w-4" />
-                          <span>Bilder</span>
+                          <span>Bilder ({estateFiles[estate.elements.Id || estate.id].length})</span>
                         </h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => loadEstateFiles(estate.elements.Id || estate.id)}
-                          disabled={loadingFiles[estate.elements.Id || estate.id]}
-                        >
-                          {loadingFiles[estate.elements.Id || estate.id] ? (
-                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          ) : (
-                            <Download className="h-3 w-3 mr-1" />
-                          )}
-                          Bilder laden
-                        </Button>
-                      </div>
-                      
-                      {estateFiles[estate.elements.Id || estate.id] && (
+                        
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                           {estateFiles[estate.elements.Id || estate.id].slice(0, 6).map((file, fileIndex) => (
                             <div key={fileIndex} className="relative group">
@@ -346,8 +336,8 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

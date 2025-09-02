@@ -167,10 +167,11 @@ class OnOfficeAPI {
       token: this.token,
       secret: this.secret,
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
-      resourceType: 'file',
+      resourceType: 'estate',
+      resourceId: estateId.toString(),
       parameters: {
-        parentids: [estateId],
-        data: ['name', 'url', 'title', 'type']
+        data: ['dateien'],
+        formatoutput: true
       }
     });
   }
