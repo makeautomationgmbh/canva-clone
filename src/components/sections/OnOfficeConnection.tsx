@@ -273,20 +273,20 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                 <p className="text-2xl font-bold">{estates.length}</p>
                 <p className="text-sm text-muted-foreground">Verfügbare Listings</p>
               </div>
-              <div className="p-4 bg-green-500/5 rounded-lg border border-green-500/20">
+              <div className="p-4 bg-accent rounded-lg border border-accent-foreground/20">
                 <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-accent-foreground" />
                   <span className="font-medium">Status</span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">Aktiv</p>
+                <p className="text-2xl font-bold text-accent-foreground">Aktiv</p>
                 <p className="text-sm text-muted-foreground">API Verbindung</p>
               </div>
-              <div className="p-4 bg-blue-500/5 rounded-lg border border-blue-500/20">
+              <div className="p-4 bg-primary-light rounded-lg border border-primary/20">
                 <div className="flex items-center space-x-2 mb-2">
-                  <RefreshCw className="h-4 w-4 text-blue-600" />
+                  <RefreshCw className="h-4 w-4 text-primary" />
                   <span className="font-medium">Letzter Sync</span>
                 </div>
-                <p className="text-2xl font-bold text-blue-600">Jetzt</p>
+                <p className="text-2xl font-bold text-primary">Jetzt</p>
                 <p className="text-sm text-muted-foreground">Automatisch</p>
               </div>
             </div>

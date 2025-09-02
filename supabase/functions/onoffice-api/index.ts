@@ -188,9 +188,9 @@ class OnOfficeAPI {
     return [];
   }
 
-  // Estate images API using EXACT documentation specification
+  // Estate images API using proper filter structure
   async getEstateImages(estateId: number) {
-    console.log(`Getting images for estate ID: ${estateId} using DOCUMENTATION SPEC`);
+    console.log(`Getting images for estate ID: ${estateId} - trying file endpoint with filter`);
     
     const result = await this.makeRequest({
       token: this.token,
@@ -198,20 +198,28 @@ class OnOfficeAPI {
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
       resourceType: 'file',
       parameters: {
-        estateid: estateId,
-        showispublishedonhomepage: true,
-        showpublicationstatus: true
+        filter: {
+          estateid: [
+            {
+              op: '=',
+              val: estateId
+            }
+          ]
+        },
+        data: ['name', 'url', 'title', 'type', 'estateid'],
+        listlimit: 50
       }
     });
     
     console.log(`Images API result for estate ${estateId}:`, JSON.stringify(result, null, 2));
     
-    // Extract images from the response structure
-    if (result.response && result.response.results && result.response.results[0] && result.response.results[0].data && result.response.results[0].data.records) {
-      return result.response.results[0].data.records;
-    }
+    const actionResult = result.response?.results?.[0];
+    console.log(`Action result status:`, actionResult?.status);
     
-    return [];
+    const parsedResult = actionResult?.data?.records || [];
+    console.log(`API result parsed: ${parsedResult.length} files found`);
+    
+    return parsedResult;
   }
 
   // Get contact/agent information
