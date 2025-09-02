@@ -162,26 +162,25 @@ class OnOfficeAPI {
   }
 
   // Get estate images
-  // Get estate files according to onOffice documentation
+  // Get estate files using the correct API call from your n8n workflow
   async getEstateFiles(estateId: number) {
     console.log(`Getting files for estate ID: ${estateId}`);
     
     const result = await this.makeRequest({
       token: this.token,
       secret: this.secret,
-      actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
+      actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:get',
+      resourceId: 'estate',
       resourceType: 'file',
       parameters: {
         estateid: estateId,
-        data: ['name', 'title', 'url', 'type', 'size', 'fileid'],
-        showispublishedonhomepage: true,
-        showpublicationstatus: true
+        includeImageUrl: 'original'
       }
     });
     
     console.log(`Files API result for estate ${estateId}:`, JSON.stringify(result, null, 2));
     
-    // Extract files from the response structure - same as estates
+    // Extract files from the response structure
     if (result.response && result.response.results && result.response.results[0] && result.response.results[0].data && result.response.results[0].data.records) {
       return result.response.results[0].data.records;
     }
