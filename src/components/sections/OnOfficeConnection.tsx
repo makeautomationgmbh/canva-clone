@@ -18,7 +18,9 @@ import {
   Euro,
   MapPin,
   Square,
-  Settings
+  Settings,
+  Image as ImageIcon,
+  Download
 } from 'lucide-react';
 import { useOnOfficeAPI, type OnOfficeEstate } from '@/hooks/useOnOfficeAPI';
 import { OnOfficeFieldConfig } from './OnOfficeFieldConfig';
@@ -29,9 +31,11 @@ interface OnOfficeConnectionProps {
 }
 
 export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionProps) => {
-  const { loading, connected, testConnection, getEstates } = useOnOfficeAPI();
+  const { loading, connected, testConnection, getEstates, getEstateFiles } = useOnOfficeAPI();
   const [estates, setEstates] = useState<OnOfficeEstate[]>([]);
+  const [estateFiles, setEstateFiles] = useState<Record<string, any[]>>({});
   const [loadingEstates, setLoadingEstates] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState<Record<string, boolean>>({});
   const [showFieldConfig, setShowFieldConfig] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
@@ -78,6 +82,21 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
     setShowFieldConfig(false);
     if (connected) {
       loadEstates(fields);
+    }
+  };
+
+  const loadEstateFiles = async (estateId: string) => {
+    if (loadingFiles[estateId] || estateFiles[estateId]) return; // Don't load if already loading or loaded
+    
+    try {
+      setLoadingFiles(prev => ({ ...prev, [estateId]: true }));
+      const files = await getEstateFiles(parseInt(estateId));
+      console.log(`Files for estate ${estateId}:`, files);
+      setEstateFiles(prev => ({ ...prev, [estateId]: files }));
+    } catch (error) {
+      console.error(`Failed to load files for estate ${estateId}:`, error);
+    } finally {
+      setLoadingFiles(prev => ({ ...prev, [estateId]: false }));
     }
   };
 
@@ -272,6 +291,60 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                         <div className="flex items-center space-x-1">
                           <span className="text-muted-foreground">📋</span>
                           <span>{estate.elements.objektnr_extern}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Estate Images Section */}
+                    <div className="mt-4 pt-3 border-t border-border/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium flex items-center space-x-2">
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Bilder</span>
+                        </h4>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => loadEstateFiles(estate.elements.Id || estate.id)}
+                          disabled={loadingFiles[estate.elements.Id || estate.id]}
+                        >
+                          {loadingFiles[estate.elements.Id || estate.id] ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : (
+                            <Download className="h-3 w-3 mr-1" />
+                          )}
+                          Bilder laden
+                        </Button>
+                      </div>
+                      
+                      {estateFiles[estate.elements.Id || estate.id] && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {estateFiles[estate.elements.Id || estate.id].slice(0, 6).map((file, fileIndex) => (
+                            <div key={fileIndex} className="relative group">
+                              {file.url ? (
+                                <img 
+                                  src={file.url} 
+                                  alt={file.title || file.name || `Bild ${fileIndex + 1}`}
+                                  className="w-full h-20 object-cover rounded border border-border/20 hover:scale-105 transition-transform cursor-pointer"
+                                  onClick={() => window.open(file.url, '_blank')}
+                                />
+                              ) : (
+                                <div className="w-full h-20 bg-muted rounded border border-border/20 flex items-center justify-center">
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                              )}
+                              {file.title && (
+                                <div className="absolute inset-0 bg-black/70 text-white p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-end">
+                                  <span className="truncate">{file.title}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {estateFiles[estate.elements.Id || estate.id].length > 6 && (
+                            <div className="w-full h-20 bg-muted rounded border border-border/20 flex items-center justify-center text-sm text-muted-foreground">
+                              +{estateFiles[estate.elements.Id || estate.id].length - 6} weitere
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
