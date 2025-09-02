@@ -15,14 +15,50 @@ import {
   Calendar,
   TrendingUp
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { OnOfficeConnection } from '@/components/sections/OnOfficeConnection';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [connectedToOnOffice, setConnectedToOnOffice] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadTemplates();
+  }, [user]);
+
+  const loadTemplates = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('templates')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    
+    if (!error && data) {
+      setTemplates(data);
+    }
+  };
+
+  const deleteTemplate = async (templateId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('templates')
+      .delete()
+      .eq('id', templateId);
+
+    if (!error) {
+      loadTemplates(); // Refresh the list
+    }
+  };
+
+  const loadTemplate = (templateId: string) => {
+    navigate(`/template-editor?template=${templateId}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,49 +103,52 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Template Cards */}
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Standard Listing</CardTitle>
-                    <Badge variant="secondary">Aktiv</Badge>
-                  </div>
-                  <CardDescription>
-                    Klassische Immobilienpräsentation mit Bild und Details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center mb-4">
-                    <FileImage className="h-8 w-8 text-primary" />
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Verwendet: 23x</span>
-                    <span>Zuletzt: vor 2 Std</span>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Real Templates from Database */}
+              {templates.map((template) => (
+                <Card key={template.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                      <Badge variant="secondary">Aktiv</Badge>
+                    </div>
+                    <CardDescription>
+                      Canvas-Größe: {template.canvas_size?.name || 'Unbekannt'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center mb-4">
+                      <FileImage className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+                      <span>Erstellt: {new Date(template.created_at).toLocaleDateString()}</span>
+                      <span>Layers: {template.layers?.length || 0}</span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => loadTemplate(template.id)}
+                        className="flex-1"
+                      >
+                        <Settings className="h-4 w-4 mr-1" />
+                        Bearbeiten
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTemplate(template.id);
+                        }}
+                      >
+                        <FileImage className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
 
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Instagram Story</CardTitle>
-                    <Badge variant="secondary">Aktiv</Badge>
-                  </div>
-                  <CardDescription>
-                    Vertikales Format für Instagram und Facebook Stories
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="aspect-[9/16] bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg flex items-center justify-center mb-4 max-h-32">
-                    <FileImage className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Verwendet: 45x</span>
-                    <span>Zuletzt: vor 1 Tag</span>
-                  </div>
-                </CardContent>
-              </Card>
-
+              {/* Create New Template Card */}
               <Card 
                 className="hover:shadow-md transition-shadow cursor-pointer border-dashed border-2 border-muted-foreground/20"
                 onClick={() => navigate('/template-editor')}
@@ -122,6 +161,20 @@ export default function Dashboard() {
                   </p>
                 </CardContent>
               </Card>
+
+              {/* Show message if no templates */}
+              {templates.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <FileImage className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Noch keine Vorlagen</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Erstellen Sie Ihre erste Vorlage um loszulegen
+                  </p>
+                  <Button variant="primary" onClick={() => navigate('/template-editor')}>
+                    Erste Vorlage erstellen
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
 
