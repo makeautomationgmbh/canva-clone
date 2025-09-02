@@ -31,7 +31,7 @@ interface OnOfficeConnectionProps {
 }
 
 export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionProps) => {
-  const { loading, connected, testConnection, getEstates, getEstateFiles } = useOnOfficeAPI();
+  const { loading, connected, testConnection, getEstates, getEstateFiles, getEstateImages } = useOnOfficeAPI();
   const [estates, setEstates] = useState<OnOfficeEstate[]>([]);
   const [estateFiles, setEstateFiles] = useState<Record<string, any[]>>({});
   const [loadingEstates, setLoadingEstates] = useState(false);
@@ -142,6 +142,39 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
     } catch (error) {
       console.error('❌ Direct files API test failed:', error);
       alert(`Files API test failed: ${error.message}`);
+    } finally {
+      setTestingFiles(false);
+    }
+  };
+
+  const testEstateImages = async () => {
+    console.log('🖼️ Test Estate Images button clicked!');
+    console.log('Available estates:', estates.length);
+    
+    if (estates.length === 0) {
+      console.log('❌ No estates available to test images');
+      alert('No estates available to test images. Please load estates first.');
+      return;
+    }
+    
+    setTestingFiles(true);
+    console.log('🔄 Starting IMAGES API test...');
+    
+    try {
+      const firstEstate = estates[0];
+      const estateId = firstEstate.elements.Id || firstEstate.id;
+      
+      console.log(`🏠 Testing IMAGES API for estate ${estateId}`);
+      console.log('Estate object:', firstEstate);
+      
+      const images = await getEstateImages(parseInt(estateId));
+      console.log(`✅ Direct IMAGES API test result:`, images);
+      
+      alert(`Images API test completed! Check console for details. Found ${Array.isArray(images) ? images.length : 'unknown'} images.`);
+      
+    } catch (error) {
+      console.error('❌ Direct IMAGES API test failed:', error);
+      alert(`Images API test failed: ${error.message}`);
     } finally {
       setTestingFiles(false);
     }
@@ -433,18 +466,33 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
           </Button>
           
           {estates.length > 0 && (
-            <Button 
-              variant="outline" 
-              onClick={testEstateFiles}
-              disabled={testingFiles}
-            >
-              {testingFiles ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <ImageIcon className="h-4 w-4 mr-2" />
-              )}
-              {testingFiles ? 'Testing...' : 'Test Files API'}
-            </Button>
+            <>
+              <Button 
+                variant="outline" 
+                onClick={testEstateFiles}
+                disabled={testingFiles}
+              >
+                {testingFiles ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                )}
+                {testingFiles ? 'Testing...' : 'Test Files API'}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={testEstateImages}
+                disabled={testingFiles}
+              >
+                {testingFiles ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                )}
+                {testingFiles ? 'Testing...' : 'Test Images API (n8n logic)'}
+              </Button>
+            </>
           )}
         </div>
       )}

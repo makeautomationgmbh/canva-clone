@@ -121,12 +121,18 @@ export const useOnOfficeAPI = () => {
     return result?.response?.results?.[0]?.data?.records || [];
   };
 
+  const getEstateImages = async (estateId: number): Promise<any[]> => {
+    const result = await callAPI('getEstateImages', { estateId });
+    return result?.response?.results?.[0]?.data?.records || [];
+  };
+
   return {
     loading,
     connected,
     testConnection,
     getEstates,
     getEstateFiles,
+    getEstateImages,
     getAddresses,
   };
 };

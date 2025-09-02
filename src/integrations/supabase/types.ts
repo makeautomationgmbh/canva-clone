@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      onoffice_estates: {
+        Row: {
+          created_at: string | null
+          estate_data: Json
+          estate_id: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          estate_data: Json
+          estate_id: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          estate_data?: Json
+          estate_id?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
