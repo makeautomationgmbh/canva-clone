@@ -25,6 +25,7 @@ import {
 import { useOnOfficeAPI, type OnOfficeEstate } from '@/hooks/useOnOfficeAPI';
 import { OnOfficeFieldConfig } from './OnOfficeFieldConfig';
 import { OnOfficeDataDebugger } from './OnOfficeDataDebugger';
+import { EstateDetailPanel } from './EstateDetailPanel';
 
 interface OnOfficeConnectionProps {
   onConnectionChange?: (connected: boolean) => void;
@@ -38,6 +39,8 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
   const [testingFiles, setTestingFiles] = useState(false);
   const [showFieldConfig, setShowFieldConfig] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
+  const [selectedEstate, setSelectedEstate] = useState<OnOfficeEstate | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   useEffect(() => {
     onConnectionChange?.(connected);
@@ -179,6 +182,16 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
     }
   };
 
+  const handleEstateClick = (estate: OnOfficeEstate) => {
+    setSelectedEstate(estate);
+    setIsPanelOpen(true);
+  };
+
+  const handlePanelClose = () => {
+    setIsPanelOpen(false);
+    setSelectedEstate(null);
+  };
+
 
   const formatPrice = (price: string | undefined) => {
     if (!price) return 'Preis auf Anfrage';
@@ -316,8 +329,16 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
           <CardContent>
             <ScrollArea className="h-96">
               <div className="space-y-4">
-                {estates.map((estate, index) => (
-                  <div key={estate.id || index} className="border border-border/50 rounded-lg p-4 hover:bg-muted/30 transition-colors">
+                {estates.map((estate, index) => {
+                  const estateId = estate.elements.Id || estate.id;
+                  const titleImages = estateFiles[estateId]?.filter(file => file.elements?.type === 'Titelbild') || [];
+                  
+                  return (
+                    <div 
+                      key={estate.id || index} 
+                      className="border border-border/50 rounded-lg p-4 hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => handleEstateClick(estate)}
+                    >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg mb-1">
@@ -375,95 +396,54 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                       )}
                     </div>
 
-                    {/* Estate Images Section */}
-                    {estateFiles[estate.elements.Id || estate.id] && estateFiles[estate.elements.Id || estate.id].length > 0 && (
+                    {/* Show only Titelbild */}
+                    {titleImages.length > 0 && (
                       <div className="mt-4 pt-3 border-t border-border/20">
-                        <h4 className="text-sm font-medium flex items-center space-x-2 mb-3">
-                          <ImageIcon className="h-4 w-4" />
-                          <span>Bilder ({estateFiles[estate.elements.Id || estate.id].length})</span>
-                        </h4>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {estateFiles[estate.elements.Id || estate.id].map((file, fileIndex) => (
-                            <div key={file.id || fileIndex} className="relative group">
-                              {file.elements?.imageUrl ? (
-                                <div className="relative">
-                                  <img 
-                                    src={file.elements.imageUrl} 
-                                    alt={file.elements.title || file.elements.name || `Bild ${fileIndex + 1}`}
-                                    className="w-full h-24 object-cover rounded-lg border border-border/20 hover:scale-105 transition-transform cursor-pointer shadow-card"
-                                    onClick={() => window.open(file.elements.imageUrl, '_blank')}
-                                  />
-                                  
-                                  {/* Image type badge */}
-                                  {file.elements.type && (
-                                    <div className="absolute top-1 left-1">
-                                      <Badge variant="secondary" className="text-xs px-1 py-0">
-                                        {file.elements.type}
-                                      </Badge>
-                                    </div>
-                                  )}
-                                  
-                                  {/* Position indicator */}
-                                  {file.elements.position && (
-                                    <div className="absolute top-1 right-1">
-                                      <Badge variant="outline" className="text-xs px-1 py-0 bg-background/80">
-                                        {file.elements.position}
-                                      </Badge>
-                                    </div>
-                                  )}
-                                  
-                                  {/* Hover overlay with title */}
-                                  {file.elements.title && (
-                                    <div className="absolute inset-0 bg-black/70 text-white p-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-end">
-                                      <div className="w-full">
-                                        <p className="font-medium truncate">{file.elements.title}</p>
-                                        {file.elements.originalname && (
-                                          <p className="text-white/70 truncate text-[10px]">{file.elements.originalname}</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="w-full h-24 bg-muted rounded-lg border border-border/20 flex items-center justify-center">
-                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                </div>
-                              )}
+                        <div className="relative">
+                          <img 
+                            src={titleImages[0].elements.imageUrl} 
+                            alt={titleImages[0].elements.title || 'Titelbild'}
+                            className="w-full h-32 object-cover rounded-lg shadow-card"
+                          />
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="secondary" className="text-xs">
+                              Titelbild
+                            </Badge>
+                          </div>
+                          {titleImages[0].elements.title && (
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <div className="bg-black/70 text-white p-2 rounded text-sm">
+                                {titleImages[0].elements.title}
+                              </div>
                             </div>
-                          ))}
+                          )}
                         </div>
                         
-                        {/* Image summary */}
-                        <div className="mt-3 text-xs text-muted-foreground">
-                          {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Titelbild').length > 0 && (
-                            <span className="mr-3">📸 {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Titelbild').length} Titelbild</span>
-                          )}
-                          {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Foto').length > 0 && (
-                            <span className="mr-3">🏠 {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Foto').length} Fotos</span>
-                          )}
-                          {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Grundriss').length > 0 && (
-                            <span>📋 {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Grundriss').length} Grundriss</span>
-                          )}
+                        {/* Click hint */}
+                        <div className="mt-2 text-xs text-muted-foreground text-center">
+                          Klicken Sie für alle Details und Bilder
                         </div>
                       </div>
-                     )}
+                    )}
 
-                     {/* Debug section for estate files */}
-                     {estateFiles[estate.elements.Id || estate.id] && (
-                       <div className="mt-4 pt-3 border-t border-border/20">
-                         <details className="mb-2">
-                           <summary className="text-xs text-muted-foreground cursor-pointer">
-                             🐛 Debug: Files data for estate {estate.elements.Id || estate.id}
-                           </summary>
-                           <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-auto">
-                             {JSON.stringify(estateFiles[estate.elements.Id || estate.id], null, 2)}
-                           </pre>
-                         </details>
-                       </div>
-                     )}
-                  </div>
-                ))}
+                    {/* No image placeholder */}
+                    {titleImages.length === 0 && (
+                      <div className="mt-4 pt-3 border-t border-border/20">
+                        <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
+                          <div className="text-center">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">Kein Titelbild verfügbar</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground text-center">
+                          Klicken Sie für alle Details
+                        </div>
+                      </div>
+                    )}
+
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </CardContent>
@@ -522,6 +502,13 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
           )}
         </div>
       )}
+      {/* Estate Detail Panel */}
+      <EstateDetailPanel
+        estate={selectedEstate}
+        estateImages={selectedEstate ? estateFiles[selectedEstate.elements.Id || selectedEstate.id] || [] : []}
+        isOpen={isPanelOpen}
+        onClose={handlePanelClose}
+      />
     </div>
   );
 };
