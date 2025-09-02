@@ -188,52 +188,30 @@ class OnOfficeAPI {
     return [];
   }
 
-  // Estate images API - try getting images through estate endpoint instead of file endpoint
+  // Estate images API - using EXACT n8n workflow structure
   async getEstateImages(estateId: number) {
-    console.log(`Getting images for estate ID: ${estateId} - trying estate endpoint with image fields`);
+    console.log(`Getting images for estate ID: ${estateId} - using n8n workflow structure`);
     
-    // First try: Get estate with image-related fields
     const result = await this.makeRequest({
       token: this.token,
       secret: this.secret,
-      actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
-      resourceType: 'estate',
-      parameters: {
-        recordids: [estateId],
-        data: ['objekttitel', 'objektbilder', 'bilder', 'hauptbild', 'fotos', 'imageurl', 'images']
-      }
+      actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:get',
+      resourceId: estateId.toString(),
+      resourceType: 'file',
+      parameters: {}
     });
     
-    console.log(`Estate images result for estate ${estateId}:`, JSON.stringify(result, null, 2));
+    console.log(`onOffice API full response:`, JSON.stringify(result, null, 2));
     
     const actionResult = result.response?.results?.[0];
     console.log(`Action result status:`, actionResult?.status);
     
-    if (actionResult?.data?.records && actionResult.data.records.length > 0) {
-      const estateRecord = actionResult.data.records[0];
-      console.log(`Estate record with potential images:`, estateRecord);
-      
-      // Extract any image-related fields from the estate record
-      const imageFields = ['objektbilder', 'bilder', 'hauptbild', 'fotos', 'imageurl', 'images'];
-      const images = [];
-      
-      for (const field of imageFields) {
-        if (estateRecord.elements && estateRecord.elements[field]) {
-          console.log(`Found ${field}:`, estateRecord.elements[field]);
-          images.push({
-            url: estateRecord.elements[field],
-            title: field,
-            name: `${field}_${estateId}`,
-            type: 'image'
-          });
-        }
-      }
-      
-      console.log(`Extracted ${images.length} images from estate fields`);
-      return images;
+    if (actionResult?.status?.errorcode === 0 && actionResult?.data?.records) {
+      console.log(`API result parsed: ${actionResult.data.records.length} files found`);
+      return actionResult.data.records;
     }
     
-    console.log(`No images found for estate ${estateId}`);
+    console.log(`No images found or API error for estate ${estateId}`);
     return [];
   }
 
