@@ -743,14 +743,14 @@ export const TemplateEditor = ({ estateData, onSaveTemplate }: TemplateEditorPro
                   <div>
                     <Label>Text Daten Verknüpfung</Label>
                     <Select
-                      value={selectedLayer.dataBinding || ''}
-                      onValueChange={(value) => updateLayerDataBinding(selectedLayer.id, value)}
+                      value={selectedLayer.dataBinding || 'none'}
+                      onValueChange={(value) => updateLayerDataBinding(selectedLayer.id, value === 'none' ? '' : value)}
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Datenfeld auswählen" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Keine Verknüpfung</SelectItem>
+                        <SelectItem value="none">Keine Verknüpfung</SelectItem>
                         {estateFields.map((field) => (
                           <SelectItem key={field.key} value={`estate.${field.key}`}>
                             {field.label}
