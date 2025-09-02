@@ -95,6 +95,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
   const [textAlign, setTextAlign] = useState("left");
   const [isSaving, setIsSaving] = useState(false);
   const [savedTemplates, setSavedTemplates] = useState<any[]>([]);
+  const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(templateId || null); // Track current template ID
 
   const estateFields = [
     { key: 'kaufpreis', label: 'Kaufpreis' },
@@ -512,15 +513,44 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
         })) as any
       };
 
-      const { error } = await supabase
-        .from('templates')
-        .insert(templateData);
+      let error;
+      let data;
+
+      if (currentTemplateId) {
+        // Update existing template
+        console.log('Updating existing template:', currentTemplateId);
+        const result = await supabase
+          .from('templates')
+          .update(templateData)
+          .eq('id', currentTemplateId)
+          .eq('user_id', user.id)
+          .select();
+        
+        error = result.error;
+        data = result.data;
+      } else {
+        // Create new template
+        console.log('Creating new template');
+        const result = await supabase
+          .from('templates')
+          .insert(templateData)
+          .select();
+        
+        error = result.error;
+        data = result.data;
+        
+        // Set the current template ID for future saves
+        if (!error && data && data[0]) {
+          setCurrentTemplateId(data[0].id);
+          console.log('New template created with ID:', data[0].id);
+        }
+      }
 
       if (error) {
         toast.error('Fehler beim Speichern der Vorlage');
         console.error('Error saving template:', error);
       } else {
-        toast.success('Vorlage erfolgreich gespeichert!');
+        toast.success(currentTemplateId ? 'Vorlage aktualisiert!' : 'Vorlage erstellt!');
         onSaveTemplate?.(templateData);
         loadSavedTemplates(); // Refresh the templates list
       }
@@ -541,6 +571,10 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
       // Clear current canvas and layers
       fabricCanvas.clear();
       setLayers([]);
+      
+      // Set the current template ID to enable updates
+      setCurrentTemplateId(template.id);
+      console.log('Set current template ID to:', template.id);
       
       // Load the saved canvas data
       await new Promise<void>((resolve) => {
