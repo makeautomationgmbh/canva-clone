@@ -383,32 +383,67 @@ export const OnOfficeConnection = ({ onConnectionChange }: OnOfficeConnectionPro
                           <span>Bilder ({estateFiles[estate.elements.Id || estate.id].length})</span>
                         </h4>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {estateFiles[estate.elements.Id || estate.id].slice(0, 6).map((file, fileIndex) => (
-                            <div key={fileIndex} className="relative group">
-                              {file.url ? (
-                                <img 
-                                  src={file.url} 
-                                  alt={file.title || file.name || `Bild ${fileIndex + 1}`}
-                                  className="w-full h-20 object-cover rounded border border-border/20 hover:scale-105 transition-transform cursor-pointer"
-                                  onClick={() => window.open(file.url, '_blank')}
-                                />
-                              ) : (
-                                <div className="w-full h-20 bg-muted rounded border border-border/20 flex items-center justify-center">
-                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {estateFiles[estate.elements.Id || estate.id].map((file, fileIndex) => (
+                            <div key={file.id || fileIndex} className="relative group">
+                              {file.elements?.imageUrl ? (
+                                <div className="relative">
+                                  <img 
+                                    src={file.elements.imageUrl} 
+                                    alt={file.elements.title || file.elements.name || `Bild ${fileIndex + 1}`}
+                                    className="w-full h-24 object-cover rounded-lg border border-border/20 hover:scale-105 transition-transform cursor-pointer shadow-card"
+                                    onClick={() => window.open(file.elements.imageUrl, '_blank')}
+                                  />
+                                  
+                                  {/* Image type badge */}
+                                  {file.elements.type && (
+                                    <div className="absolute top-1 left-1">
+                                      <Badge variant="secondary" className="text-xs px-1 py-0">
+                                        {file.elements.type}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Position indicator */}
+                                  {file.elements.position && (
+                                    <div className="absolute top-1 right-1">
+                                      <Badge variant="outline" className="text-xs px-1 py-0 bg-background/80">
+                                        {file.elements.position}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Hover overlay with title */}
+                                  {file.elements.title && (
+                                    <div className="absolute inset-0 bg-black/70 text-white p-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-end">
+                                      <div className="w-full">
+                                        <p className="font-medium truncate">{file.elements.title}</p>
+                                        {file.elements.originalname && (
+                                          <p className="text-white/70 truncate text-[10px]">{file.elements.originalname}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                              {file.title && (
-                                <div className="absolute inset-0 bg-black/70 text-white p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-end">
-                                  <span className="truncate">{file.title}</span>
+                              ) : (
+                                <div className="w-full h-24 bg-muted rounded-lg border border-border/20 flex items-center justify-center">
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
                                 </div>
                               )}
                             </div>
                           ))}
-                          {estateFiles[estate.elements.Id || estate.id].length > 6 && (
-                            <div className="w-full h-20 bg-muted rounded border border-border/20 flex items-center justify-center text-sm text-muted-foreground">
-                              +{estateFiles[estate.elements.Id || estate.id].length - 6} weitere
-                            </div>
+                        </div>
+                        
+                        {/* Image summary */}
+                        <div className="mt-3 text-xs text-muted-foreground">
+                          {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Titelbild').length > 0 && (
+                            <span className="mr-3">📸 {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Titelbild').length} Titelbild</span>
+                          )}
+                          {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Foto').length > 0 && (
+                            <span className="mr-3">🏠 {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Foto').length} Fotos</span>
+                          )}
+                          {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Grundriss').length > 0 && (
+                            <span>📋 {estateFiles[estate.elements.Id || estate.id].filter(f => f.elements?.type === 'Grundriss').length} Grundriss</span>
                           )}
                         </div>
                       </div>
