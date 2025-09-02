@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+
+# Build artifacts
+build/
+dist/
+coverage/
+
+# Tooling caches
+.turbo/
+.cache/
+
+# Hosting/platform
+.vercel/
+
+# Editors/IDE
+.vscode/
+.idea/
+
+# Temp files
+.tmp/
+tmp/
+TEMP/
+
+# Server uploads (if any)
+server/**/uploads/
