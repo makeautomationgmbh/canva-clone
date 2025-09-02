@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const benefits = [
   "Verbinden Sie Ihr onOffice CRM in wenigen Minuten",
@@ -11,6 +13,9 @@ const benefits = [
 ];
 
 export const CTA = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <section className="py-24 lg:py-32">
       <div className="container">
@@ -43,8 +48,9 @@ export const CTA = () => {
                   variant="outline" 
                   size="lg" 
                   className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                  onClick={() => navigate(user ? '/dashboard' : '/auth')}
                 >
-                  Jetzt kostenlos testen
+                  {user ? 'Zum Dashboard' : 'Jetzt kostenlos testen'}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>

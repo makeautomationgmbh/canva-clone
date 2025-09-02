@@ -1,8 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Building2, Camera, Zap } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden bg-gradient-subtle py-24 lg:py-32">
       <div className="container relative">
@@ -25,8 +30,13 @@ export const Hero = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="primary" size="lg" className="shadow-medium">
-                Kostenlos testen
+              <Button 
+                variant="primary" 
+                size="lg" 
+                className="shadow-medium"
+                onClick={() => navigate(user ? '/dashboard' : '/auth')}
+              >
+                {user ? 'Zum Dashboard' : 'Kostenlos testen'}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button variant="outline" size="lg">
