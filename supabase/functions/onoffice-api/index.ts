@@ -188,38 +188,53 @@ class OnOfficeAPI {
     return [];
   }
 
-  // Estate images API using proper filter structure
+  // Estate images API - try getting images through estate endpoint instead of file endpoint
   async getEstateImages(estateId: number) {
-    console.log(`Getting images for estate ID: ${estateId} - trying file endpoint with filter`);
+    console.log(`Getting images for estate ID: ${estateId} - trying estate endpoint with image fields`);
     
+    // First try: Get estate with image-related fields
     const result = await this.makeRequest({
       token: this.token,
       secret: this.secret,
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
-      resourceType: 'file',
+      resourceType: 'estate',
       parameters: {
-        filter: {
-          estateid: [
-            {
-              op: '=',
-              val: estateId
-            }
-          ]
-        },
-        data: ['name', 'url', 'title', 'type', 'estateid'],
-        listlimit: 50
+        recordids: [estateId],
+        data: ['objekttitel', 'objektbilder', 'bilder', 'hauptbild', 'fotos', 'imageurl', 'images']
       }
     });
     
-    console.log(`Images API result for estate ${estateId}:`, JSON.stringify(result, null, 2));
+    console.log(`Estate images result for estate ${estateId}:`, JSON.stringify(result, null, 2));
     
     const actionResult = result.response?.results?.[0];
     console.log(`Action result status:`, actionResult?.status);
     
-    const parsedResult = actionResult?.data?.records || [];
-    console.log(`API result parsed: ${parsedResult.length} files found`);
+    if (actionResult?.data?.records && actionResult.data.records.length > 0) {
+      const estateRecord = actionResult.data.records[0];
+      console.log(`Estate record with potential images:`, estateRecord);
+      
+      // Extract any image-related fields from the estate record
+      const imageFields = ['objektbilder', 'bilder', 'hauptbild', 'fotos', 'imageurl', 'images'];
+      const images = [];
+      
+      for (const field of imageFields) {
+        if (estateRecord.elements && estateRecord.elements[field]) {
+          console.log(`Found ${field}:`, estateRecord.elements[field]);
+          images.push({
+            url: estateRecord.elements[field],
+            title: field,
+            name: `${field}_${estateId}`,
+            type: 'image'
+          });
+        }
+      }
+      
+      console.log(`Extracted ${images.length} images from estate fields`);
+      return images;
+    }
     
-    return parsedResult;
+    console.log(`No images found for estate ${estateId}`);
+    return [];
   }
 
   // Get contact/agent information
