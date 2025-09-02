@@ -103,7 +103,22 @@ class OnOfficeAPI {
     }
 
     const result = await response.json();
-    console.log('onOffice API response:', JSON.stringify(result, null, 2));
+    console.log('onOffice API full response:', JSON.stringify(result, null, 2));
+    
+    // Check for API errors
+    if (result.status && result.status.code !== 200) {
+      console.error('onOffice API error:', result.status);
+      throw new Error(`onOffice API error: ${result.status.message || 'Unknown error'} (Code: ${result.status.code})`);
+    }
+    
+    // Check for action-level errors
+    if (result.response && result.response.results && result.response.results[0]) {
+      const actionResult = result.response.results[0];
+      if (actionResult.status && actionResult.status.code !== 200) {
+        console.error('onOffice action error:', actionResult.status);
+        throw new Error(`onOffice action error: ${actionResult.status.message || 'Unknown error'} (Code: ${actionResult.status.code})`);
+      }
+    }
     
     return result;
   }
@@ -195,6 +210,7 @@ serve(async (req) => {
     let result;
 
     console.log('onOffice API action:', action);
+    console.log('Request data:', JSON.stringify(requestData, null, 2));
 
     switch (action) {
       case 'getEstates':
@@ -220,6 +236,8 @@ serve(async (req) => {
       default:
         throw new Error(`Unknown action: ${action}`);
     }
+
+    console.log('API result parsed:', JSON.stringify(result, null, 2));
 
     return new Response(JSON.stringify({ 
       success: true, 
