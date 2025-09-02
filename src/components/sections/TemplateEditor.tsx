@@ -30,8 +30,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-// Extend FabricObject to include custom layerId property
+// Extend FabricObject to include custom properties
 interface ExtendedFabricObject extends FabricObject {
+  id?: string;
   layerId?: string;
 }
 
@@ -40,8 +41,9 @@ interface TemplateLayer {
   type: 'text' | 'image' | 'shape';
   name: string;
   dataBinding?: string;
-  fabricObject?: any;
+  fabricObjectId?: string; // Store fabric object ID instead of object reference
   estateImageType?: string; // 'Titelbild' | 'Foto' | 'Grundriss'
+  visible?: boolean;
 }
 
 interface EstateData {
@@ -127,6 +129,21 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     }
   }, [templateId, fabricCanvas, savedTemplates]);
 
+  // Helper function to get fabric object by ID
+  const getFabricObjectById = (id: string) => {
+    if (!fabricCanvas) return null;
+    return fabricCanvas.getObjects().find(obj => (obj as ExtendedFabricObject).id === id) || null;
+  };
+
+  // Helper function to get fabric object for a layer
+  const getLayerFabricObject = (layer: TemplateLayer) => {
+    if (!layer.fabricObjectId) return null;
+    return getFabricObjectById(layer.fabricObjectId);
+  };
+
+  // Helper function to generate unique IDs
+  const generateId = () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
   const loadSavedTemplates = async () => {
     if (!user) {
       console.log('No user found, skipping template load');
@@ -163,7 +180,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     canvas.on('selection:created', (e) => {
       const activeObject = e.selected?.[0];
       if (activeObject) {
-        const layer = layers.find(l => l.fabricObject === activeObject);
+        const layer = layers.find(l => l.fabricObjectId === (activeObject as ExtendedFabricObject).id);
         setSelectedLayer(layer || null);
         
         // Update UI controls based on selected object
@@ -181,7 +198,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     canvas.on('selection:updated', (e) => {
       const activeObject = e.selected?.[0];
       if (activeObject) {
-        const layer = layers.find(l => l.fabricObject === activeObject);
+        const layer = layers.find(l => l.fabricObjectId === (activeObject as ExtendedFabricObject).id);
         setSelectedLayer(layer || null);
         
         if (activeObject.type === 'textbox') {
@@ -219,38 +236,82 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     toast(`Canvas-Größe geändert zu ${preset.name}`);
   };
 
-  const addTextLayer = () => {
+  const addText = () => {
     if (!fabricCanvas) return;
 
-    const textbox = new Textbox('Beispieltext', {
+    const textId = generateId();
+    const text = new Textbox("Beispieltext", {
       left: 100,
       top: 100,
-      width: 200,
       fontSize: fontSize[0],
       fill: activeColor,
-      fontFamily: 'Arial',
       fontWeight: fontWeight,
-      textAlign: textAlign
+      textAlign: textAlign as any,
     });
-
-    fabricCanvas.add(textbox);
-    fabricCanvas.setActiveObject(textbox);
+    
+    // Set unique ID on the fabric object
+    (text as ExtendedFabricObject).id = textId;
+    
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
 
     const newLayer: TemplateLayer = {
       id: `text_${Date.now()}`,
       type: 'text',
       name: `Text ${layers.length + 1}`,
-      fabricObject: textbox
+      fabricObjectId: textId,
+      visible: true
     };
 
     setLayers([...layers, newLayer]);
     setSelectedLayer(newLayer);
-    toast("Text-Ebene hinzugefügt");
+  };
+
+  const addShape = (type: 'rectangle' | 'circle') => {
+    if (!fabricCanvas) return;
+
+    const shapeId = generateId();
+    let shape: Rect | Circle;
+
+    if (type === 'rectangle') {
+      shape = new Rect({
+        left: 100,
+        top: 100,
+        width: 100,
+        height: 100,
+        fill: activeColor,
+      });
+    } else {
+      shape = new Circle({
+        left: 100,
+        top: 100,
+        radius: 50,
+        fill: activeColor,
+      });
+    }
+
+    // Set unique ID on the fabric object
+    (shape as ExtendedFabricObject).id = shapeId;
+    
+    fabricCanvas.add(shape);
+    fabricCanvas.setActiveObject(shape);
+
+    const newLayer: TemplateLayer = {
+      id: `shape_${Date.now()}`,
+      type: 'shape',
+      name: `${type === 'rectangle' ? 'Rechteck' : 'Kreis'} ${layers.length + 1}`,
+      fabricObjectId: shapeId,
+      visible: true
+    };
+
+    setLayers([...layers, newLayer]);
+    setSelectedLayer(newLayer);
   };
 
   const addImagePlaceholder = () => {
     if (!fabricCanvas) return;
 
+    const imageId = generateId();
     const rect = new Rect({
       left: 100,
       top: 100,
@@ -264,30 +325,18 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
       ry: 8
     });
 
-    // Add text overlay to indicate it's an image placeholder
-    const placeholderText = new Textbox('Bild Platzhalter', {
-      left: 120,
-      top: 165,
-      fontSize: 12,
-      fill: '#6c757d',
-      fontFamily: 'Arial',
-      selectable: false,
-      evented: false
-    });
-
-    const group = new Group([rect, placeholderText], {
-      left: 100,
-      top: 100
-    });
+    // Set unique ID on the fabric object
+    (rect as ExtendedFabricObject).id = imageId;
     
-    fabricCanvas.add(group);
-    fabricCanvas.setActiveObject(group);
+    fabricCanvas.add(rect);
+    fabricCanvas.setActiveObject(rect);
 
     const newLayer: TemplateLayer = {
       id: `image_${Date.now()}`,
       type: 'image',
       name: `Bild ${layers.length + 1}`,
-      fabricObject: group
+      fabricObjectId: imageId,
+      visible: true
     };
 
     setLayers([...layers, newLayer]);
@@ -295,78 +344,32 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     toast("Bild-Platzhalter hinzugefügt");
   };
 
-  const addCircleShape = () => {
-    if (!fabricCanvas) return;
-
-    const circle = new Circle({
-      left: 100,
-      top: 100,
-      radius: 50,
-      fill: activeColor,
-      stroke: '#000000',
-      strokeWidth: 0
-    });
-
-    fabricCanvas.add(circle);
-    fabricCanvas.setActiveObject(circle);
-
-    const newLayer: TemplateLayer = {
-      id: `circle_${Date.now()}`,
-      type: 'shape',
-      name: `Kreis ${layers.length + 1}`,
-      fabricObject: circle
-    };
-
-    setLayers([...layers, newLayer]);
-    setSelectedLayer(newLayer);
-    toast("Kreis hinzugefügt");
-  };
-
-  const addRectangleShape = () => {
-    if (!fabricCanvas) return;
-
-    const rect = new Rect({
-      left: 100,
-      top: 100,
-      width: 100,
-      height: 100,
-      fill: activeColor,
-      stroke: '#000000',
-      strokeWidth: 0,
-      rx: 0,
-      ry: 0
-    });
-
-    fabricCanvas.add(rect);
-    fabricCanvas.setActiveObject(rect);
-
-    const newLayer: TemplateLayer = {
-      id: `rectangle_${Date.now()}`,
-      type: 'shape',
-      name: `Rechteck ${layers.length + 1}`,
-      fabricObject: rect
-    };
-
-    setLayers([...layers, newLayer]);
-    setSelectedLayer(newLayer);
-    toast("Rechteck hinzugefügt");
-  };
-
   const updateSelectedObjectProperty = (property: string, value: any) => {
-    if (!selectedLayer?.fabricObject || !fabricCanvas) return;
+    if (!selectedLayer?.fabricObjectId || !fabricCanvas) return;
 
-    selectedLayer.fabricObject.set(property, value);
-    fabricCanvas.renderAll();
+    const fabricObject = getLayerFabricObject(selectedLayer);
+    if (fabricObject) {
+      fabricObject.set(property, value);
+      fabricCanvas.renderAll();
+    }
   };
 
-  const duplicateSelectedLayer = () => {
+  const duplicateSelectedLayer = async () => {
     if (!selectedLayer || !fabricCanvas) return;
 
-    selectedLayer.fabricObject.clone((cloned: any) => {
+    const fabricObject = getLayerFabricObject(selectedLayer);
+    if (!fabricObject) return;
+
+    try {
+      const cloned = await fabricObject.clone();
+      const clonedId = generateId();
+      (cloned as ExtendedFabricObject).id = clonedId;
+      
       cloned.set({
-        left: cloned.left + 20,
-        top: cloned.top + 20,
+        left: (cloned.left || 0) + 20,
+        top: (cloned.top || 0) + 20,
       });
+      
       fabricCanvas.add(cloned);
       fabricCanvas.setActiveObject(cloned);
 
@@ -374,15 +377,19 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
         id: `${selectedLayer.type}_${Date.now()}`,
         type: selectedLayer.type,
         name: `${selectedLayer.name} Kopie`,
-        fabricObject: cloned,
+        fabricObjectId: clonedId,
         dataBinding: selectedLayer.dataBinding,
-        estateImageType: selectedLayer.estateImageType
+        estateImageType: selectedLayer.estateImageType,
+        visible: true
       };
 
       setLayers([...layers, newLayer]);
       setSelectedLayer(newLayer);
       toast("Ebene dupliziert");
-    });
+    } catch (error) {
+      console.error('Error duplicating layer:', error);
+      toast.error('Fehler beim Duplizieren der Ebene');
+    }
   };
 
   const loadEstateImage = (layerId: string, imageType: string) => {
@@ -397,11 +404,16 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     const layer = layers.find(l => l.id === layerId);
     if (!layer) return;
 
+    const placeholder = getLayerFabricObject(layer);
+    if (!placeholder) return;
+
     FabricImage.fromURL(estateImage.elements.imageUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
+      const imageId = generateId();
+      (img as ExtendedFabricObject).id = imageId;
+      
       // Scale image to fit placeholder
-      const placeholder = layer.fabricObject;
       const scaleX = placeholder.width! / img.width!;
       const scaleY = placeholder.height! / img.height!;
       const scale = Math.min(scaleX, scaleY);
@@ -420,7 +432,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
       // Update layer
       setLayers(layers.map(l => 
         l.id === layerId 
-          ? { ...l, fabricObject: img, estateImageType: imageType }
+          ? { ...l, fabricObjectId: imageId, estateImageType: imageType }
           : l
       ));
 
@@ -433,7 +445,11 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
   const deleteSelectedLayer = () => {
     if (!selectedLayer || !fabricCanvas) return;
 
-    fabricCanvas.remove(selectedLayer.fabricObject);
+    const fabricObject = getLayerFabricObject(selectedLayer);
+    if (fabricObject) {
+      fabricCanvas.remove(fabricObject);
+    }
+    
     setLayers(layers.filter(l => l.id !== selectedLayer.id));
     setSelectedLayer(null);
     toast("Ebene gelöscht");
@@ -449,11 +465,14 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     // Update the fabric object with estate data if available
     if (estateData && dataBinding) {
       const layer = layers.find(l => l.id === layerId);
-      if (layer && layer.type === 'text' && layer.fabricObject) {
-        const value = dataBinding.split('.').reduce((obj, key) => obj?.[key], estateData);
-        if (value) {
-          layer.fabricObject.set('text', String(value));
-          fabricCanvas?.renderAll();
+      if (layer && layer.type === 'text' && layer.fabricObjectId) {
+        const fabricObject = getLayerFabricObject(layer);
+        if (fabricObject) {
+          const value = dataBinding.split('.').reduce((obj, key) => obj?.[key], estateData);
+          if (value) {
+            fabricObject.set('text', String(value));
+            fabricCanvas?.renderAll();
+          }
         }
       }
     }
@@ -469,8 +488,9 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
     
     try {
       // Add custom layer ID to each fabric object before saving
-      fabricCanvas.getObjects().forEach((obj, index) => {
-        const layer = layers[index];
+      fabricCanvas.getObjects().forEach((obj) => {
+        const fabricObjectId = (obj as ExtendedFabricObject).id;
+        const layer = layers.find(l => l.fabricObjectId === fabricObjectId);
         if (layer) {
           (obj as ExtendedFabricObject).layerId = layer.id;
         }
@@ -479,14 +499,16 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
       const templateData = {
         user_id: user.id,
         name: templateName,
-        canvas_data: fabricCanvas.toJSON() as any, // Fabric.js will automatically include custom properties
+        canvas_data: fabricCanvas.toJSON() as any,
         canvas_size: JSON.parse(JSON.stringify(selectedPreset)) as any,
         layers: layers.map(layer => ({
           id: layer.id,
           type: layer.type,
           name: layer.name,
           dataBinding: layer.dataBinding || null,
-          estateImageType: layer.estateImageType || null
+          estateImageType: layer.estateImageType || null,
+          fabricObjectId: layer.fabricObjectId || null,
+          visible: layer.visible !== false
         })) as any
       };
 
@@ -535,33 +557,43 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
           // Update template name
           setTemplateName(template.name);
           
-          // Recreate layers array by matching fabric objects to saved layers via layerId
+          // Recreate layers array by matching fabric objects to saved layers
           const fabricObjects = fabricCanvas.getObjects();
           const newLayers: TemplateLayer[] = [];
           
-          // First, try to match by layerId (if available)
+          // Match layers using fabricObjectId or layerId
           template.layers.forEach((layerData: any) => {
-            const fabricObject = fabricObjects.find(obj => (obj as ExtendedFabricObject).layerId === layerData.id);
+            let fabricObject = null;
+            
+            // First try to match by layerId (for compatibility)
+            if (layerData.id) {
+              fabricObject = fabricObjects.find(obj => (obj as ExtendedFabricObject).layerId === layerData.id);
+            }
+            
+            // If not found, try to match by fabricObjectId
+            if (!fabricObject && layerData.fabricObjectId) {
+              fabricObject = fabricObjects.find(obj => (obj as ExtendedFabricObject).id === layerData.fabricObjectId);
+            }
+            
+            // If still not found, fall back to index-based matching
+            if (!fabricObject) {
+              const index = template.layers.indexOf(layerData);
+              fabricObject = fabricObjects[index];
+            }
+            
             if (fabricObject) {
+              // Ensure fabric object has an ID
+              if (!(fabricObject as ExtendedFabricObject).id) {
+                (fabricObject as ExtendedFabricObject).id = layerData.fabricObjectId || generateId();
+              }
+              
               newLayers.push({
                 ...layerData,
-                fabricObject: fabricObject
+                fabricObjectId: (fabricObject as ExtendedFabricObject).id,
+                visible: layerData.visible !== false
               });
             }
           });
-          
-          // If no layerId matches found, fall back to index-based matching
-          if (newLayers.length === 0 && fabricObjects.length > 0 && template.layers.length > 0) {
-            console.log('Falling back to index-based layer matching');
-            template.layers.forEach((layerData: any, index: number) => {
-              if (fabricObjects[index]) {
-                newLayers.push({
-                  ...layerData,
-                  fabricObject: fabricObjects[index]
-                });
-              }
-            });
-          }
           
           console.log('Created layers:', newLayers.length);
           setLayers(newLayers);
@@ -657,7 +689,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
               variant="outline"
               size="sm"
               className="w-full justify-start"
-              onClick={addTextLayer}
+              onClick={addText}
             >
               <Type className="h-4 w-4 mr-2" />
               Text
@@ -675,7 +707,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
               variant="outline"
               size="sm"
               className="w-full justify-start"
-              onClick={addRectangleShape}
+              onClick={() => addShape('rectangle')}
             >
               <Square className="h-4 w-4 mr-2" />
               Rechteck
@@ -684,7 +716,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
               variant="outline"
               size="sm"
               className="w-full justify-start"
-              onClick={addCircleShape}
+              onClick={() => addShape('circle')}
             >
               <CircleIcon className="h-4 w-4 mr-2" />
               Kreis
@@ -828,7 +860,7 @@ export const TemplateEditor = ({ estateData, onSaveTemplate, templateId }: Templ
             value={activeColor}
             onChange={(e) => {
               setActiveColor(e.target.value);
-              if (selectedLayer?.fabricObject) {
+              if (selectedLayer?.fabricObjectId) {
                 updateSelectedObjectProperty('fill', e.target.value);
               }
             }}
