@@ -40,7 +40,7 @@ export const Dashboard = () => {
               <h2 className="text-2xl font-bold">Vorlagen Dashboard</h2>
               <p className="text-muted-foreground">Verwalten Sie Ihre Social Media Vorlagen und generieren Sie Inhalte</p>
             </div>
-            <Button variant="primary">
+            <Button variant="primary" onClick={() => window.location.href = '/template-editor'}>
               <Plus className="h-4 w-4 mr-2" />
               Neue Vorlage
             </Button>
