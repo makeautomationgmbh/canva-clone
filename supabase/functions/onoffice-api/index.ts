@@ -128,8 +128,22 @@ class OnOfficeAPI {
   // Get real estate listings with configurable fields
   async getEstates(parameters = {}) {
     // Standard basic fields that most onOffice systems have
-    // Start with absolute minimum fields - just Id to test
-    const basicFields = ['Id'];
+    // Using the exact field names from your working n8n workflow
+    const basicFields = [
+      'Id',
+      'objekttitel',
+      'vermarktungsart',
+      'wohnflaeche', 
+      'anzahl_zimmer',
+      'ort',
+      'kaufpreis',
+      'kaltmiete',
+      'warmmiete',
+      'objektbeschreibung',
+      'status',
+      'verkauft',
+      'reserviert'
+    ];
 
     return this.makeRequest({
       token: this.token,
