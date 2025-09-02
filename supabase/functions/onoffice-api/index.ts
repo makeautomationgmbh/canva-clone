@@ -131,11 +131,8 @@ class OnOfficeAPI {
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
       resourceType: 'estate',
       parameters: {
-        data: ['Id', 'kaufpreis', 'lage', 'objekttitel', 'objektbeschreibung', 'objektart', 'wohnflaeche', 'grundstueck', 'zimmer', 'badezimmer', 'objektnr_extern'],
-        listlimit: 50,
-        filter: {
-          status: [{ op: '=', val: 1 }] // Only active properties
-        },
+        data: ['Id', 'objektnr_extern'], // Start with just basic fields
+        listlimit: 20,
         ...parameters
       }
     });
