@@ -164,7 +164,9 @@ class OnOfficeAPI {
   // Get estate images
   // Get estate files according to onOffice documentation
   async getEstateFiles(estateId: number) {
-    return this.makeRequest({
+    console.log(`Getting files for estate ID: ${estateId}`);
+    
+    const result = await this.makeRequest({
       token: this.token,
       secret: this.secret,
       actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:read',
@@ -175,6 +177,15 @@ class OnOfficeAPI {
         showpublicationstatus: true
       }
     });
+    
+    console.log(`Files API result for estate ${estateId}:`, JSON.stringify(result, null, 2));
+    
+    // Extract files from the response structure
+    if (result.response && result.response.results && result.response.results[0] && result.response.results[0].data && result.response.results[0].data.records) {
+      return result.response.results[0].data.records;
+    }
+    
+    return [];
   }
 
   // Get contact/agent information
