@@ -188,6 +188,32 @@ class OnOfficeAPI {
     return [];
   }
 
+  // Separate estate images API call using your exact n8n workflow logic
+  async getEstateImages(estateId: number) {
+    console.log(`Getting images for estate ID: ${estateId}`);
+    
+    const result = await this.makeRequest({
+      token: this.token,
+      secret: this.secret,
+      actionId: 'urn:onoffice-de-ns:smart:2.5:smartml:action:get',
+      resourceId: 'estate',
+      resourceType: 'file',
+      parameters: {
+        estateid: estateId,
+        includeImageUrl: 'original'
+      }
+    });
+    
+    console.log(`Images API result for estate ${estateId}:`, JSON.stringify(result, null, 2));
+    
+    // Extract images from the response structure
+    if (result.response && result.response.results && result.response.results[0] && result.response.results[0].data && result.response.results[0].data.records) {
+      return result.response.results[0].data.records;
+    }
+    
+    return [];
+  }
+
   // Get contact/agent information
   async getAddresses(parameters = {}) {
     return this.makeRequest({
@@ -255,6 +281,13 @@ serve(async (req) => {
           throw new Error('Estate ID is required');
         }
         result = await api.getEstateFiles(requestData.estateId);
+        break;
+      
+      case 'getEstateImages':
+        if (!requestData.estateId) {
+          throw new Error('Estate ID is required');
+        }
+        result = await api.getEstateImages(requestData.estateId);
         break;
       
       case 'getAddresses':
