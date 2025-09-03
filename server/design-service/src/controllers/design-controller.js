@@ -1,10 +1,14 @@
-const Design = require("../models/design");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 exports.getUserDesigns = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const designs = await Design.find({ userId }).sort({ updatedAt: -1 });
+    const designs = await prisma.design.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+    });
 
     res.status(200).json({
       success: true,
@@ -24,7 +28,7 @@ exports.getUserDesignsByID = async (req, res) => {
     const userId = req.user.userId;
     const designId = req.params.id;
 
-    const design = await Design.findOne({ _id: designId, userId });
+    const design = await prisma.design.findFirst({ where: { id: designId, userId } });
 
     if (!design) {
       return res.status(404).json({
@@ -51,7 +55,7 @@ exports.saveDesign = async (req, res) => {
     const userId = req.user.userId;
     const { designId, name, canvasData, width, height, category } = req.body;
     if (designId) {
-      const design = await Design.findOne({ _id: designId, userId });
+      const design = await prisma.design.findFirst({ where: { id: designId, userId } });
       if (!design) {
         return res.status(404).json({
           success: false,
@@ -59,30 +63,32 @@ exports.saveDesign = async (req, res) => {
         });
       }
 
-      if (name) design.name = name;
-      if (canvasData) design.canvasData = canvasData;
-      if (width) design.width = width;
-      if (height) design.height = height;
-      if (category) design.category = category;
-
-      design.updatedAt = Date.now();
-      const updatedDesign = await design.save();
+      const updatedDesign = await prisma.design.update({
+        where: { id: designId },
+        data: {
+          ...(name !== undefined ? { name } : {}),
+          ...(canvasData !== undefined ? { canvasData } : {}),
+          ...(width !== undefined ? { width } : {}),
+          ...(height !== undefined ? { height } : {}),
+          ...(category !== undefined ? { category } : {}),
+        },
+      });
 
       return res.status(200).json({
         success: true,
         data: updatedDesign,
       });
     } else {
-      const newDesign = new Design({
-        userId,
-        name: name || "Untitled Design",
-        width,
-        height,
-        canvasData,
-        category,
+      const saveDesign = await prisma.design.create({
+        data: {
+          userId,
+          name: name || "Untitled Design",
+          width,
+          height,
+          canvasData,
+          category: category || null,
+        },
       });
-
-      const saveDesign = await newDesign.save();
       return res.status(200).json({
         success: true,
         data: saveDesign,
@@ -101,7 +107,7 @@ exports.deleteDesign = async (req, res) => {
   try {
     const userId = req.user.userId;
     const designId = req.params.id;
-    const design = await Design.findOne({ _id: designId, userId });
+    const design = await prisma.design.findFirst({ where: { id: designId, userId } });
 
     if (!design) {
       return res.status(404).json({
@@ -110,7 +116,7 @@ exports.deleteDesign = async (req, res) => {
       });
     }
 
-    await Design.deleteOne({ _id: designId });
+    await prisma.design.delete({ where: { id: designId } });
 
     res.status(200).json({
       success: true,

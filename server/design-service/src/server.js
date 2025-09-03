@@ -1,17 +1,11 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const designRoutes = require("./routes/design-routes");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((error) => console.log("MongoDB Error", error));
 
 app.use(cors());
 app.use(helmet());
